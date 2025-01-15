@@ -25,6 +25,8 @@ import org.springframework.cloud.gateway.support.NameUtils;
 import org.springframework.cloud.gateway.support.ShortcutConfigurable;
 
 /**
+ * 网关过滤器工厂，负责创建{@link GatewayFilter}
+ *
  * @author Spencer Gibb
  */
 @FunctionalInterface

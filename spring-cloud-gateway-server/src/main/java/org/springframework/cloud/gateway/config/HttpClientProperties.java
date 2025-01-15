@@ -30,34 +30,53 @@ import org.springframework.util.unit.DataSize;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Configuration properties for the Netty {@link reactor.netty.http.client.HttpClient}.
+ * 用于Netty的http客户端的配置类
+ *
+ * @see reactor.netty.http.client.HttpClient
+ *
  */
 @ConfigurationProperties("spring.cloud.gateway.httpclient")
 @Validated
 public class HttpClientProperties {
 
-	/** The connect timeout in millis, the default is 30s. */
+	/**
+	 * 连接超时时间，时间单位为毫秒，默认为30s
+	 */
 	private Integer connectTimeout;
 
-	/** The response timeout. */
+	/**
+	 * 响应超时时间
+	 */
 	private Duration responseTimeout;
 
-	/** The max response header size. */
+	/**
+	 * 最大请求头大小
+	 */
 	private DataSize maxHeaderSize;
 
-	/** The max initial line length. */
+	/**
+	 * 最大初始线长度
+	 */
 	private DataSize maxInitialLineLength;
 
-	/** Pool configuration for Netty HttpClient. */
+	/**
+	 * Netty http客户端池配置
+	 */
 	private Pool pool = new Pool();
 
-	/** Proxy configuration for Netty HttpClient. */
+	/**
+	 * Netty http客户端代理配置
+	 */
 	private Proxy proxy = new Proxy();
 
-	/** SSL configuration for Netty HttpClient. */
+	/**
+	 * Netty http客户端SSL配置
+	 */
 	private Ssl ssl = new Ssl();
 
-	/** Websocket configuration for Netty HttpClient. */
+	/**
+	 * Netty http客户端Websocket配置
+	 */
 	private Websocket websocket = new Websocket();
 
 	/** Enables wiretap debugging for Netty HttpClient. */

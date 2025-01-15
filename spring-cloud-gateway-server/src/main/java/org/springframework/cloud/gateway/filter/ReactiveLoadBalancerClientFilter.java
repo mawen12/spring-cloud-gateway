@@ -51,8 +51,15 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.addOriginalRequestUrl;
 
 /**
- * A {@link GlobalFilter} implementation that routes requests using reactive Spring Cloud
- * LoadBalancer.
+ * 基于反应式Spring Cloud LoadBalancer路由请求的{@link GlobalFilter}实现.
+ *
+ * <p>根据用户提供的路径，以及配置的gatewaySchemePrefix，如果使用lb，
+ * 则代表使用负载均衡前往注册中心查找并选择实例，用于更新目标请求路径。
+ *
+ * <p>具体格式为：lb://serviceName
+ * <ul>
+ *     <li>lb代表使用LoadBalancer，但是仅仅这样不可以，还需要引入spring-cloud-starter-loadbalancer，因为它能够跟</li>
+ * </ul>
  *
  * @author Spencer Gibb
  * @author Tim Ysewyn
@@ -64,12 +71,18 @@ public class ReactiveLoadBalancerClientFilter implements GlobalFilter, Ordered {
 	private static final Log log = LogFactory.getLog(ReactiveLoadBalancerClientFilter.class);
 
 	/**
-	 * Order of filter.
+	 * 过滤器顺序
 	 */
 	public static final int LOAD_BALANCER_CLIENT_FILTER_ORDER = 10150;
 
+	/**
+	 * 负载均衡客户端工厂
+	 */
 	private final LoadBalancerClientFactory clientFactory;
 
+	/**
+	 * 网关负载均衡属性，属性前缀为: spring.cloud.gateway.loadbalancer
+	 */
 	private final GatewayLoadBalancerProperties properties;
 
 	/**
@@ -77,14 +90,12 @@ public class ReactiveLoadBalancerClientFilter implements GlobalFilter, Ordered {
 	 * {@link ReactiveLoadBalancerClientFilter#ReactiveLoadBalancerClientFilter(LoadBalancerClientFactory, GatewayLoadBalancerProperties)}
 	 */
 	@Deprecated
-	public ReactiveLoadBalancerClientFilter(LoadBalancerClientFactory clientFactory,
-			GatewayLoadBalancerProperties properties, LoadBalancerProperties loadBalancerProperties) {
+	public ReactiveLoadBalancerClientFilter(LoadBalancerClientFactory clientFactory, GatewayLoadBalancerProperties properties, LoadBalancerProperties loadBalancerProperties) {
 		this.clientFactory = clientFactory;
 		this.properties = properties;
 	}
 
-	public ReactiveLoadBalancerClientFilter(LoadBalancerClientFactory clientFactory,
-			GatewayLoadBalancerProperties properties) {
+	public ReactiveLoadBalancerClientFilter(LoadBalancerClientFactory clientFactory, GatewayLoadBalancerProperties properties) {
 		this.clientFactory = clientFactory;
 		this.properties = properties;
 	}
@@ -94,27 +105,40 @@ public class ReactiveLoadBalancerClientFilter implements GlobalFilter, Ordered {
 		return LOAD_BALANCER_CLIENT_FILTER_ORDER;
 	}
 
+	/**
+	 * 检查目标请求路径是否需要使用负载均衡
+	 *
+	 * @param exchange the current server exchange
+	 * @param chain provides a way to delegate to the next filter
+	 * @return
+	 */
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+		// 读取属性 gatewayRequestUrl
 		URI url = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
+		// 读取属性 gatewaySchemePrefix
 		String schemePrefix = exchange.getAttribute(GATEWAY_SCHEME_PREFIX_ATTR);
+		// 如果url为空，或者没有以lb作为协议，则代表不需要走负载均衡，也不会使用注册中心查找服务
 		if (url == null || (!"lb".equals(url.getScheme()) && !"lb".equals(schemePrefix))) {
 			return chain.filter(exchange);
 		}
-		// preserve the original url
+		// 保留原始url，写入到 gatewayOriginalRequestUrl
 		addOriginalRequestUrl(exchange, url);
 
 		if (log.isTraceEnabled()) {
+			// 打印过滤器和url
 			log.trace(ReactiveLoadBalancerClientFilter.class.getSimpleName() + " url before: " + url);
 		}
 
+		// 获取请求路径，
 		URI requestUri = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
+		// 获取服务Id
 		String serviceId = requestUri.getHost();
-		Set<LoadBalancerLifecycle> supportedLifecycleProcessors = LoadBalancerLifecycleValidator
-			.getSupportedLifecycleProcessors(clientFactory.getInstances(serviceId, LoadBalancerLifecycle.class),
-					RequestDataContext.class, ResponseData.class, ServiceInstance.class);
-		DefaultRequest<RequestDataContext> lbRequest = new DefaultRequest<>(new RequestDataContext(
-				new RequestData(exchange.getRequest(), exchange.getAttributes()), getHint(serviceId)));
+		// 获取负载均衡生命周期函数
+		Set<LoadBalancerLifecycle> supportedLifecycleProcessors = LoadBalancerLifecycleValidator.getSupportedLifecycleProcessors(clientFactory.getInstances(serviceId, LoadBalancerLifecycle.class), RequestDataContext.class, ResponseData.class, ServiceInstance.class);
+		// 构造默认请求
+		DefaultRequest<RequestDataContext> lbRequest = new DefaultRequest<>(new RequestDataContext(new RequestData(exchange.getRequest(), exchange.getAttributes()), getHint(serviceId)));
+
 		return choose(lbRequest, serviceId, supportedLifecycleProcessors).doOnNext(response -> {
 
 			if (!response.hasServer()) {
@@ -134,8 +158,7 @@ public class ReactiveLoadBalancerClientFilter implements GlobalFilter, Ordered {
 				overrideScheme = url.getScheme();
 			}
 
-			DelegatingServiceInstance serviceInstance = new DelegatingServiceInstance(retrievedInstance,
-					overrideScheme);
+			DelegatingServiceInstance serviceInstance = new DelegatingServiceInstance(retrievedInstance, overrideScheme);
 
 			URI requestUrl = reconstructURI(serviceInstance, uri);
 
@@ -159,18 +182,35 @@ public class ReactiveLoadBalancerClientFilter implements GlobalFilter, Ordered {
 								new RequestData(exchange.getRequest(), exchange.getAttributes()))))));
 	}
 
+	/**
+	 * 重新构造URI，例如原始URI为lb:posts/posts/1，而实际的服务实例为127.0.0.1:8081，经过该方法处理后的结果为127.0.0.1:8081/posts/1
+	 *
+	 * @param serviceInstance
+	 * @param original
+	 * @return
+	 */
 	protected URI reconstructURI(ServiceInstance serviceInstance, URI original) {
 		return LoadBalancerUriTools.reconstructURI(serviceInstance, original);
 	}
 
-	private Mono<Response<ServiceInstance>> choose(Request<RequestDataContext> lbRequest, String serviceId,
-			Set<LoadBalancerLifecycle> supportedLifecycleProcessors) {
-		ReactorLoadBalancer<ServiceInstance> loadBalancer = this.clientFactory.getInstance(serviceId,
-				ReactorServiceInstanceLoadBalancer.class);
+	/**
+	 * 选择一个服务实例并返回
+	 *
+	 * @param lbRequest 负载均衡请求
+	 * @param serviceId 服务Id
+	 * @param supportedLifecycleProcessors 生命周期函数
+	 * @return 返回一个服务实例
+	 */
+	private Mono<Response<ServiceInstance>> choose(Request<RequestDataContext> lbRequest, String serviceId, Set<LoadBalancerLifecycle> supportedLifecycleProcessors) {
+		// 获取该服务的负载均衡器
+		ReactorLoadBalancer<ServiceInstance> loadBalancer = this.clientFactory.getInstance(serviceId, ReactorServiceInstanceLoadBalancer.class);
 		if (loadBalancer == null) {
+			// 负载均衡器为空，抛出未找到异常
 			throw new NotFoundException("No loadbalancer available for " + serviceId);
 		}
+		// 触发生命周期开始函数
 		supportedLifecycleProcessors.forEach(lifecycle -> lifecycle.onStart(lbRequest));
+		// 根据请求选择一个服务实例
 		return loadBalancer.choose(lbRequest);
 	}
 

@@ -38,7 +38,10 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CLIENT_RESPONSE_CONN_ATTR;
 
 /**
+ * 使用Netty回写响应的过滤器
+ *
  * @author Spencer Gibb
+ * @see NettyRoutingFilter
  */
 public class NettyWriteResponseFilter implements GlobalFilter, Ordered {
 
@@ -49,6 +52,9 @@ public class NettyWriteResponseFilter implements GlobalFilter, Ordered {
 
 	private static final Log log = LogFactory.getLog(NettyWriteResponseFilter.class);
 
+	/**
+	 * 支持的流媒体类型
+	 */
 	private final List<MediaType> streamingMediaTypes;
 
 	public NettyWriteResponseFilter(List<MediaType> streamingMediaTypes) {

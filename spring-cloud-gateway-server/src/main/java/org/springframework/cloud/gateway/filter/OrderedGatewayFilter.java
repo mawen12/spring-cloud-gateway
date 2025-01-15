@@ -22,12 +22,20 @@ import org.springframework.core.Ordered;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 已排序网关过滤器
+ *
  * @author Spencer Gibb
  */
 public class OrderedGatewayFilter implements GatewayFilter, Ordered {
 
+	/**
+	 * 网关过滤器代理
+	 */
 	private final GatewayFilter delegate;
 
+	/**
+	 * 执行顺序
+	 */
 	private final int order;
 
 	public OrderedGatewayFilter(GatewayFilter delegate, int order) {
@@ -41,6 +49,7 @@ public class OrderedGatewayFilter implements GatewayFilter, Ordered {
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+		// 执行过滤操作
 		return this.delegate.filter(exchange, chain);
 	}
 

@@ -38,7 +38,7 @@ import org.springframework.web.reactive.DispatcherHandler;
  * @author Olga Maciaszek-Sharma
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass({ ReactiveLoadBalancer.class, LoadBalancerAutoConfiguration.class, DispatcherHandler.class })
+@ConditionalOnClass({ReactiveLoadBalancer.class, LoadBalancerAutoConfiguration.class, DispatcherHandler.class })
 @AutoConfigureAfter(LoadBalancerAutoConfiguration.class)
 @EnableConfigurationProperties(GatewayLoadBalancerProperties.class)
 public class GatewayReactiveLoadBalancerClientAutoConfiguration {

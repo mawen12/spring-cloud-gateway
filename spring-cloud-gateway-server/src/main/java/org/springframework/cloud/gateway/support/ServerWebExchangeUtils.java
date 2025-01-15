@@ -60,7 +60,11 @@ public final class ServerWebExchangeUtils {
 	private static final Log log = LogFactory.getLog(ServerWebExchangeUtils.class);
 
 	/**
-	 * Preserve-Host header attribute name.
+	 * 保留主机头属性，如果选择保留，则在进行新的http请求之前，将主机写入到新请求头中
+	 *
+	 * @see org.springframework.cloud.gateway.filter.NettyRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebsocketRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebClientHttpRoutingFilter
 	 */
 	public static final String PRESERVE_HOST_HEADER_ATTRIBUTE = qualify("preserveHostHeader");
 
@@ -70,17 +74,29 @@ public final class ServerWebExchangeUtils {
 	public static final String URI_TEMPLATE_VARIABLES_ATTRIBUTE = qualify("uriTemplateVariables");
 
 	/**
-	 * Client response attribute name.
+	 * 客户端响应属性，在执行到路由过滤器并发起请求后，将保存客户端的响应
+	 *
+	 * @see org.springframework.cloud.gateway.filter.NettyRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebsocketRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebClientHttpRoutingFilter
 	 */
 	public static final String CLIENT_RESPONSE_ATTR = qualify("gatewayClientResponse");
 
 	/**
-	 * Client response connection attribute name.
+	 * 客户端响应连接属性，在执行到路由过滤器并发起请求后，保存返回客户端响应连接
+	 *
+	 * @see org.springframework.cloud.gateway.filter.NettyRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebsocketRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebClientHttpRoutingFilter
 	 */
 	public static final String CLIENT_RESPONSE_CONN_ATTR = qualify("gatewayClientResponseConnection");
 
 	/**
-	 * Client response header names attribute name.
+	 * 客户端响应头名称集合属性，在执行到路由过滤器并发起请求后，保存返回响应头的名称集合
+	 *
+	 * @see org.springframework.cloud.gateway.filter.NettyRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebsocketRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebClientHttpRoutingFilter
 	 */
 	public static final String CLIENT_RESPONSE_HEADER_NAMES = qualify("gatewayClientResponseHeaderNames");
 
@@ -141,7 +157,11 @@ public final class ServerWebExchangeUtils {
 	public static final String WEIGHT_ATTR = qualify("routeWeight");
 
 	/**
-	 * Original response Content-Type attribute name.
+	 * 原始响应的内容类型属性，在执行到路由过滤器并发起请求后，如果响应头的内容类型不为空，则写入
+	 *
+	 * @see org.springframework.cloud.gateway.filter.NettyRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebsocketRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebClientHttpRoutingFilter
 	 */
 	public static final String ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR = "original_response_content_type";
 
@@ -151,8 +171,12 @@ public final class ServerWebExchangeUtils {
 	public static final String CIRCUITBREAKER_EXECUTION_EXCEPTION_ATTR = qualify("circuitBreakerExecutionException");
 
 	/**
-	 * Used when a routing filter has been successfully called. Allows users to write
-	 * custom routing filters that disable built in routing filters.
+	 * 当一个路由过滤器已经被成功调用的时候使用。允许开发者重写自定义的路由过滤器来禁用内置的路由过滤器
+	 *
+	 * @see org.springframework.cloud.gateway.filter.NettyRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.ForwardRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebClientHttpRoutingFilter
+	 * @see org.springframework.cloud.gateway.filter.WebsocketRoutingFilter
 	 */
 	public static final String GATEWAY_ALREADY_ROUTED_ATTR = qualify("gatewayAlreadyRouted");
 
@@ -247,8 +271,7 @@ public final class ServerWebExchangeUtils {
 			try {
 				UriComponentsBuilder.fromUri(uri).build(true);
 				return true;
-			}
-			catch (IllegalArgumentException ignored) {
+			} catch (IllegalArgumentException ignored) {
 				if (log.isTraceEnabled()) {
 					log.trace("Error in containsEncodedParts", ignored);
 				}
@@ -266,8 +289,7 @@ public final class ServerWebExchangeUtils {
 		try {
 			int status = Integer.parseInt(statusString);
 			httpStatus = HttpStatus.resolve(status);
-		}
-		catch (NumberFormatException e) {
+		} catch (NumberFormatException e) {
 			// try the enum string
 			httpStatus = HttpStatus.valueOf(statusString.toUpperCase(Locale.ROOT));
 		}
@@ -275,8 +297,11 @@ public final class ServerWebExchangeUtils {
 	}
 
 	public static void addOriginalRequestUrl(ServerWebExchange exchange, URI url) {
+		// 初始化请求头 gatewayOriginalRequestUrl
 		exchange.getAttributes().computeIfAbsent(GATEWAY_ORIGINAL_REQUEST_URL_ATTR, s -> new LinkedHashSet<>());
+		// 获取请求头 gatewayOriginalRequestUrl
 		LinkedHashSet<URI> uris = exchange.getRequiredAttribute(GATEWAY_ORIGINAL_REQUEST_URL_ATTR);
+		// 保存原始路径
 		uris.add(url);
 	}
 
@@ -301,13 +326,12 @@ public final class ServerWebExchangeUtils {
 	public static void putUriTemplateVariables(ServerWebExchange exchange, Map<String, String> uriVariables) {
 		if (exchange.getAttributes().containsKey(URI_TEMPLATE_VARIABLES_ATTRIBUTE)) {
 			Map<String, Object> existingVariables = (Map<String, Object>) exchange.getAttributes()
-				.get(URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+					.get(URI_TEMPLATE_VARIABLES_ATTRIBUTE);
 			HashMap<String, Object> newVariables = new HashMap<>();
 			newVariables.putAll(existingVariables);
 			newVariables.putAll(uriVariables);
 			exchange.getAttributes().put(URI_TEMPLATE_VARIABLES_ATTRIBUTE, newVariables);
-		}
-		else {
+		} else {
 			exchange.getAttributes().put(URI_TEMPLATE_VARIABLES_ATTRIBUTE, uriVariables);
 		}
 	}
@@ -323,13 +347,15 @@ public final class ServerWebExchangeUtils {
 	 * {@link #CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR} respectively. This method is
 	 * useful when the {@link ServerWebExchange} can not be modified, such as a
 	 * {@link RoutePredicateFactory}.
+	 *
 	 * @param exchange the available ServerWebExchange.
 	 * @param function a function that accepts the created ServerHttpRequestDecorator.
-	 * @param <T> generic type for the return {@link Mono}.
+	 * @param <T>      generic type for the return {@link Mono}.
+	 *
 	 * @return Mono of type T created by the function parameter.
 	 */
 	public static <T> Mono<T> cacheRequestBodyAndRequest(ServerWebExchange exchange,
-			Function<ServerHttpRequest, Mono<T>> function) {
+														 Function<ServerHttpRequest, Mono<T>> function) {
 		return cacheRequestBody(exchange, true, function);
 	}
 
@@ -337,13 +363,15 @@ public final class ServerWebExchangeUtils {
 	 * Caches the request body in a ServerWebExchange attributes. The attribute is
 	 * {@link #CACHED_REQUEST_BODY_ATTR}. This method is useful when the
 	 * {@link ServerWebExchange} can be mutated, such as a {@link GatewayFilterFactory}.
+	 *
 	 * @param exchange the available ServerWebExchange.
 	 * @param function a function that accepts the created ServerHttpRequestDecorator.
-	 * @param <T> generic type for the return {@link Mono}.
+	 * @param <T>      generic type for the return {@link Mono}.
+	 *
 	 * @return Mono of type T created by the function parameter.
 	 */
 	public static <T> Mono<T> cacheRequestBody(ServerWebExchange exchange,
-			Function<ServerHttpRequest, Mono<T>> function) {
+											   Function<ServerHttpRequest, Mono<T>> function) {
 		return cacheRequestBody(exchange, false, function);
 	}
 
@@ -353,16 +381,18 @@ public final class ServerWebExchangeUtils {
 	 * can not mutate the ServerWebExchange (such as a Predicate), setting
 	 * cacheDecoratedRequest to true will put a {@link ServerHttpRequestDecorator} in an
 	 * attribute {@link #CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR} for adaptation later.
-	 * @param exchange the available ServerWebExchange.
+	 *
+	 * @param exchange              the available ServerWebExchange.
 	 * @param cacheDecoratedRequest if true, the ServerHttpRequestDecorator will be
-	 * cached.
-	 * @param function a function that accepts a ServerHttpRequest. It can be the created
-	 * ServerHttpRequestDecorator or the original if there is no body.
-	 * @param <T> generic type for the return {@link Mono}.
+	 *                              cached.
+	 * @param function              a function that accepts a ServerHttpRequest. It can be the created
+	 *                              ServerHttpRequestDecorator or the original if there is no body.
+	 * @param <T>                   generic type for the return {@link Mono}.
+	 *
 	 * @return Mono of type T created by the function parameter.
 	 */
 	private static <T> Mono<T> cacheRequestBody(ServerWebExchange exchange, boolean cacheDecoratedRequest,
-			Function<ServerHttpRequest, Mono<T>> function) {
+												Function<ServerHttpRequest, Mono<T>> function) {
 		// don't cache if body is already cached
 		Object cachedDataBuffer = exchange.getAttribute(CACHED_REQUEST_BODY_ATTR);
 		if (cachedDataBuffer instanceof DataBuffer) {
@@ -375,35 +405,40 @@ public final class ServerWebExchangeUtils {
 		DataBufferFactory factory = response.bufferFactory();
 		// Join all the DataBuffers so we have a single DataBuffer for the body
 		return DataBufferUtils.join(exchange.getRequest().getBody())
-			.defaultIfEmpty(factory.wrap(EMPTY_BYTES))
-			.map(dataBuffer -> decorate(exchange, dataBuffer, cacheDecoratedRequest))
-			.switchIfEmpty(Mono.just(exchange.getRequest()))
-			.flatMap(function);
+				.defaultIfEmpty(factory.wrap(EMPTY_BYTES))
+				.map(dataBuffer -> decorate(exchange, dataBuffer, cacheDecoratedRequest))
+				.switchIfEmpty(Mono.just(exchange.getRequest()))
+				.flatMap(function);
 	}
 
 	/**
-	 * clear the request body in a ServerWebExchange attribute. The attribute is
-	 * {@link #CACHED_REQUEST_BODY_ATTR}.
+	 * 清除{@link ServerWebExchange}中的请求体，该请求体保存在{@link org.springframework.web.server.adapter.DefaultServerWebExchange#attributes}中，
+	 * 属性名称为{@link #CACHED_REQUEST_BODY_ATTR}
+	 *
+	 * <p>如果使用的是{@link PooledDataBuffer}，对于已经分配的空间需要手动释放
+	 *
 	 * @param exchange the available ServerWebExchange.
 	 */
 	public static void clearCachedRequestBody(ServerWebExchange exchange) {
+		// 移除属性 cachedRequestBody
 		Object attribute = exchange.getAttributes().remove(CACHED_REQUEST_BODY_ATTR);
 		if (attribute != null && attribute instanceof PooledDataBuffer) {
+			// 对于使用 PooledDataBuffer 来缓冲数据，如果已经分配了空间，则需要回收
 			PooledDataBuffer dataBuffer = (PooledDataBuffer) attribute;
 			if (dataBuffer.isAllocated()) {
 				if (log.isTraceEnabled()) {
 					log.trace("releasing cached body in exchange attribute");
 				}
-				// ensure proper release
+				// 确保清除缓冲数据
 				while (!dataBuffer.release()) {
-					// release() counts down until zero, will never be infinite loop
+					// 一直调用release()，直到其计数器变为0，该方法不会永远循环
 				}
 			}
 		}
 	}
 
 	private static ServerHttpRequest decorate(ServerWebExchange exchange, DataBuffer dataBuffer,
-			boolean cacheDecoratedRequest) {
+											  boolean cacheDecoratedRequest) {
 		if (dataBuffer.readableByteCount() > 0) {
 			if (log.isTraceEnabled()) {
 				log.trace("retaining body in exchange attribute");
@@ -427,12 +462,10 @@ public final class ServerWebExchangeUtils {
 					if (dataBuffer instanceof NettyDataBuffer) {
 						NettyDataBuffer pdb = (NettyDataBuffer) dataBuffer;
 						return pdb.factory().wrap(pdb.getNativeBuffer().retainedSlice());
-					}
-					else if (dataBuffer instanceof DefaultDataBuffer) {
+					} else if (dataBuffer instanceof DefaultDataBuffer) {
 						DefaultDataBuffer ddf = (DefaultDataBuffer) dataBuffer;
 						return ddf.factory().wrap(Unpooled.wrappedBuffer(ddf.getNativeBuffer()).nioBuffer());
-					}
-					else {
+					} else {
 						throw new IllegalArgumentException(
 								"Unable to handle DataBuffer of type " + dataBuffer.getClass());
 					}
@@ -448,8 +481,10 @@ public final class ServerWebExchangeUtils {
 	/**
 	 * One place to handle forwarding using DispatcherHandler. Allows for common code to
 	 * be reused.
-	 * @param handler The DispatcherHandler.
+	 *
+	 * @param handler  The DispatcherHandler.
 	 * @param exchange The ServerWebExchange.
+	 *
 	 * @return value from handler.
 	 */
 	public static Mono<Void> handle(DispatcherHandler handler, ServerWebExchange exchange) {

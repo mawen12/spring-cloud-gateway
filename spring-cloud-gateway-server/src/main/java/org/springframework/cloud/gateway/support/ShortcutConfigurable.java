@@ -45,6 +45,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
+ * 代表快捷可配置的接口
+ *
  * @author Spencer Gibb
  */
 public interface ShortcutConfigurable {
@@ -93,10 +95,13 @@ public interface ShortcutConfigurable {
 		return "";
 	}
 
+	/**
+	 * 快捷类型美剧
+	 */
 	enum ShortcutType {
 
 		/**
-		 * Default shortcut type.
+		 * 默认快捷类型
 		 */
 		DEFAULT {
 			@Override
@@ -116,7 +121,7 @@ public interface ShortcutConfigurable {
 		},
 
 		/**
-		 * List shortcut type.
+		 * 收集列表快捷类型
 		 */
 		GATHER_LIST {
 			@Override
@@ -138,7 +143,7 @@ public interface ShortcutConfigurable {
 		},
 
 		/**
-		 * List is all elements except last which is a boolean flag.
+		 * 列表是除最后一个元素（布尔标志）之外的所有元素
 		 */
 		GATHER_LIST_TAIL_FLAG {
 			@Override

@@ -19,11 +19,20 @@ package org.springframework.cloud.gateway.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
+ * 网关负载均衡的配置类
+ *
+ * <p>仅用于网关处理涉及到负载均衡的请求时是否使用404
+ *
  * @author Ryan Baxter
+ * @see org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClientFilter
+ * @see org.springframework.cloud.gateway.config.GatewayNoLoadBalancerClientAutoConfiguration.NoLoadBalancerClientFilter
  */
 @ConfigurationProperties("spring.cloud.gateway.loadbalancer")
 public class GatewayLoadBalancerProperties {
 
+	/**
+	 * 是否使用404
+	 */
 	private boolean use404;
 
 	public boolean isUse404() {

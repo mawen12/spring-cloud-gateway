@@ -48,12 +48,23 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 @AutoConfigureAfter(GatewayReactiveLoadBalancerClientAutoConfiguration.class)
 public class GatewayNoLoadBalancerClientAutoConfiguration {
 
+	/**
+	 * 注册无负载均衡客户端过滤器的Bean
+	 *
+	 * @param properties
+	 * @return
+	 */
 	@Bean
 	@ConditionalOnMissingBean(ReactiveLoadBalancerClientFilter.class)
 	public NoLoadBalancerClientFilter noLoadBalancerClientFilter(GatewayLoadBalancerProperties properties) {
 		return new NoLoadBalancerClientFilter(properties.isUse404());
 	}
 
+	/**
+	 * 无负载均衡客户端过滤器的{@link GlobalFilter}实现
+	 *
+	 * @see ReactiveLoadBalancerClientFilter
+	 */
 	protected static class NoLoadBalancerClientFilter implements GlobalFilter, Ordered {
 
 		private final boolean use404;

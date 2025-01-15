@@ -22,6 +22,11 @@ import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.core.Ordered;
 import org.springframework.web.server.ServerWebExchange;
 
+/**
+ * 移除缓存体过滤器，最高优先级，负责在执行完所有的过滤器之后，清除缓存的请求体。
+ *
+ * <p>请求体被保存在属性中，其key为{@code cachedRequestBody}
+ */
 public class RemoveCachedBodyFilter implements GlobalFilter, Ordered {
 
 	@Override

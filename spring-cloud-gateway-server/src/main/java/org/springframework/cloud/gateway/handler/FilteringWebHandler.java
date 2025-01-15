@@ -165,6 +165,11 @@ public class FilteringWebHandler implements WebHandler, ApplicationListener<Refr
 
 	}
 
+	/**
+	 * 网关过滤器适配器，支持其他过滤器
+	 *
+	 * <p>适配器设计模式
+	 */
 	private static class GatewayFilterAdapter implements GatewayFilter, DecoratingProxy {
 
 		private final GlobalFilter delegate;

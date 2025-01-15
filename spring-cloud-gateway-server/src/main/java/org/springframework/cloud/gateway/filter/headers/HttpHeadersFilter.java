@@ -24,16 +24,18 @@ import org.springframework.web.server.ServerWebExchange;
 public interface HttpHeadersFilter {
 
 	static HttpHeaders filterRequest(List<HttpHeadersFilter> filters, ServerWebExchange exchange) {
+		// 获取请求头
 		HttpHeaders headers = exchange.getRequest().getHeaders();
+		// 对请求头应用{@code REQUEST}类型的过滤器
 		return filter(filters, headers, exchange, Type.REQUEST);
 	}
 
-	static HttpHeaders filter(List<HttpHeadersFilter> filters, HttpHeaders input, ServerWebExchange exchange,
-			Type type) {
+	static HttpHeaders filter(List<HttpHeadersFilter> filters, HttpHeaders input, ServerWebExchange exchange, Type type) {
 		if (filters != null) {
 			HttpHeaders filtered = input;
 			for (int i = 0; i < filters.size(); i++) {
 				HttpHeadersFilter filter = filters.get(i);
+				// 仅将指定类型的过滤器应用到请求头上
 				if (filter.supports(type)) {
 					filtered = filter.filter(filtered, exchange);
 				}
@@ -56,15 +58,18 @@ public interface HttpHeadersFilter {
 		return type.equals(Type.REQUEST);
 	}
 
+	/**
+	 * 请求头过滤类型
+	 */
 	enum Type {
 
 		/**
-		 * Filter for request headers.
+		 * 请求头的过滤器
 		 */
 		REQUEST,
 
 		/**
-		 * Filter for response headers.
+		 * 响应头的过滤器
 		 */
 		RESPONSE
 
