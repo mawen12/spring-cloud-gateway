@@ -26,6 +26,20 @@ import org.springframework.http.HttpCookie;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 代表Cookie等值的条件
+ *
+ * <p>配置示例：
+ * <pre>
+ * 	spring:
+ * 	  cloud:
+ * 	    gateway:
+ * 	      routes:
+ * 	        -id: cookie_route
+ * 	        uri: https://example.org
+ * 	        predicates:
+ * 	          - Cookie=chocolate, ch.p
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class CookieRoutePredicateFactory extends AbstractRoutePredicateFactory<CookieRoutePredicateFactory.Config> {
@@ -54,11 +68,14 @@ public class CookieRoutePredicateFactory extends AbstractRoutePredicateFactory<C
 		return new GatewayPredicate() {
 			@Override
 			public boolean test(ServerWebExchange exchange) {
+				// 获取Cookie中指定名称的cookie
 				List<HttpCookie> cookies = exchange.getRequest().getCookies().get(config.name);
+				// 没有代表false
 				if (cookies == null) {
 					return false;
 				}
 				for (HttpCookie cookie : cookies) {
+					// 匹配正则代表true
 					if (cookie.getValue().matches(config.regexp)) {
 						return true;
 					}
@@ -78,11 +95,20 @@ public class CookieRoutePredicateFactory extends AbstractRoutePredicateFactory<C
 		};
 	}
 
+	/**
+	 * 代笔Cookie的配置值
+	 */
 	public static class Config {
 
+		/**
+		 * 类似上述示例中的chocolate
+		 */
 		@NotEmpty
 		private String name;
 
+		/**
+		 * 类似上述示例中的ch.p
+		 */
 		@NotEmpty
 		private String regexp;
 

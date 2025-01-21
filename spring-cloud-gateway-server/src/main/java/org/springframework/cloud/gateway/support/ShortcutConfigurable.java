@@ -105,8 +105,7 @@ public interface ShortcutConfigurable {
 		 */
 		DEFAULT {
 			@Override
-			public Map<String, Object> normalize(Map<String, String> args, ShortcutConfigurable shortcutConf,
-					SpelExpressionParser parser, BeanFactory beanFactory) {
+			public Map<String, Object> normalize(Map<String, String> args, ShortcutConfigurable shortcutConf, SpelExpressionParser parser, BeanFactory beanFactory) {
 				Map<String, Object> map = new HashMap<>();
 				int entryIdx = 0;
 				for (Map.Entry<String, String> entry : args.entrySet()) {
@@ -125,8 +124,7 @@ public interface ShortcutConfigurable {
 		 */
 		GATHER_LIST {
 			@Override
-			public Map<String, Object> normalize(Map<String, String> args, ShortcutConfigurable shortcutConf,
-					SpelExpressionParser parser, BeanFactory beanFactory) {
+			public Map<String, Object> normalize(Map<String, String> args, ShortcutConfigurable shortcutConf, SpelExpressionParser parser, BeanFactory beanFactory) {
 				Map<String, Object> map = new HashMap<>();
 				// field order should be of size 1
 				List<String> fieldOrder = shortcutConf.shortcutFieldOrder();

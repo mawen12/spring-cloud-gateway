@@ -25,6 +25,9 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.core.style.ToStringCreator;
 import org.springframework.validation.annotation.Validated;
 
+/**
+ * 允许以{@code name}和{@code value}参数配置{@link GatewayFilterFactory}
+ */
 public abstract class AbstractNameValueGatewayFilterFactory
 		extends AbstractGatewayFilterFactory<AbstractNameValueGatewayFilterFactory.NameValueConfig> {
 

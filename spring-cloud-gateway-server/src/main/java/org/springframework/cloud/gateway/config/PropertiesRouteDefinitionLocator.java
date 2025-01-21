@@ -22,10 +22,15 @@ import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
 
 /**
+ * 基于{@link GatewayProperties}的路由定义定位器
+ *
  * @author Spencer Gibb
  */
 public class PropertiesRouteDefinitionLocator implements RouteDefinitionLocator {
 
+	/**
+	 * 提供路由信息的属性
+	 */
 	private final GatewayProperties properties;
 
 	public PropertiesRouteDefinitionLocator(GatewayProperties properties) {

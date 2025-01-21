@@ -22,11 +22,10 @@ import org.springframework.cloud.gateway.support.ShortcutConfigurable;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * Contract for interception-style, chained processing of Web requests that may be used to
- * implement cross-cutting, application-agnostic requirements such as security, timeouts,
- * and others. Specific to a Gateway
+ * 拦截式、链式处理的Web请求的契约，可用于实现跨领域的、于应用程序无关的要求，例如安全性、超时等，特定于网关。
  *
- * Copied from WebFilter
+ * <p>网关过滤器可以对请求和响应进行编辑
+ * <p>移植于{@link org.springframework.web.server.WebFilter}
  *
  * @author Rossen Stoyanchev
  * @since 5.0

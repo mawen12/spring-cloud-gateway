@@ -28,10 +28,15 @@ import org.springframework.util.ObjectUtils;
 import static java.util.Collections.synchronizedMap;
 
 /**
+ * 基于内存的路由定义仓库实现
+ *
  * @author Spencer Gibb
  */
 public class InMemoryRouteDefinitionRepository implements RouteDefinitionRepository {
 
+	/**
+	 * 保存路由定义的容器
+	 */
 	private final Map<String, RouteDefinition> routes = synchronizedMap(new LinkedHashMap<String, RouteDefinition>());
 
 	@Override

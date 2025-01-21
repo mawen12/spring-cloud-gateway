@@ -26,6 +26,17 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 代表查询参数匹配的条件
+ *
+ * <p>任意匹配即可
+ *
+ * <p>配置示例:
+ * <pre>
+ *   ...
+ *   predicates:
+ * 	   - Query=color, green
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class QueryRoutePredicateFactory extends AbstractRoutePredicateFactory<QueryRoutePredicateFactory.Config> {
@@ -59,11 +70,13 @@ public class QueryRoutePredicateFactory extends AbstractRoutePredicateFactory<Qu
 					return exchange.getRequest().getQueryParams().containsKey(config.param);
 				}
 
+				// 类似示例中的查询参数color对应的值
 				List<String> values = exchange.getRequest().getQueryParams().get(config.param);
 				if (values == null) {
 					return false;
 				}
 				for (String value : values) {
+					// 检查参数值是否匹配类似上述的green
 					if (value != null && value.matches(config.regexp)) {
 						return true;
 					}
@@ -83,11 +96,20 @@ public class QueryRoutePredicateFactory extends AbstractRoutePredicateFactory<Qu
 		};
 	}
 
+	/**
+	 * 代表Query的配置值
+	 */
 	public static class Config {
 
+		/**
+		 * 类似上述示例中的color
+		 */
 		@NotEmpty
 		private String param;
 
+		/**
+		 * 类似上述示例中的green
+		 */
 		private String regexp;
 
 		public String getParam() {

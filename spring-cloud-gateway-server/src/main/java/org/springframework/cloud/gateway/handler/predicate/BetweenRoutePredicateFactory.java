@@ -27,6 +27,15 @@ import org.springframework.util.Assert;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 代表在指定时间范围之间的条件
+ *
+ * <p>配置示例:
+ * <pre>
+ *   ...
+ *   predicates:
+ *     - Between=2017-01-20T17:42:47.789-07:00[America/Denver], 2017-01-21T17:42:47.789-07:00[America/Denver]
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class BetweenRoutePredicateFactory extends AbstractRoutePredicateFactory<BetweenRoutePredicateFactory.Config> {
@@ -59,6 +68,7 @@ public class BetweenRoutePredicateFactory extends AbstractRoutePredicateFactory<
 			@Override
 			public boolean test(ServerWebExchange serverWebExchange) {
 				final ZonedDateTime now = ZonedDateTime.now();
+				// 对比当前时间是否在配置时间范围内
 				return now.isAfter(config.getDatetime1()) && now.isBefore(config.getDatetime2());
 			}
 
@@ -74,11 +84,20 @@ public class BetweenRoutePredicateFactory extends AbstractRoutePredicateFactory<
 		};
 	}
 
+	/**
+	 * 代表Between的配置值
+	 */
 	public static class Config {
 
+		/**
+		 * 类似上述示例中的2017-01-20T17:42:47.789-07:00[America/Denver]
+		 */
 		@NotNull
 		private ZonedDateTime datetime1;
 
+		/**
+		 * 类似上述示例中的2017-01-21T17:42:47.789-07:00[America/Denver]
+		 */
 		@NotNull
 		private ZonedDateTime datetime2;
 

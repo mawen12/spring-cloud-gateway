@@ -183,6 +183,14 @@ import org.springframework.web.reactive.socket.server.support.HandshakeWebSocket
 import org.springframework.web.reactive.socket.server.upgrade.ReactorNettyRequestUpgradeStrategy;
 
 /**
+ * Spring Cloud Gateway 自动配置类，Spring Cloud Gateway 初始化配置入口
+ *
+ * <p>如果设置了{@code spring.cloud.gateway.enabled=false}，则不会触发，默认触发该自动配置类
+ * <p>自动注册使用{@link EnableConfigurationProperties}注解的类，此处为{@link GatewayProperties}
+ * <p>晚于{@link HttpHandlerAutoConfiguration}和{@link WebFluxAutoConfiguration}执行
+ * <p>早于{@link GatewayReactiveLoadBalancerClientAutoConfiguration}和{@link GatewayClassPathWarningAutoConfiguration}执行
+ * <p>必须存在{@link DispatcherHandler}该类时才执行注册
+ *
  * @author Spencer Gibb
  * @author Ziemowit Stolarczyk
  * @author Mete Alpaslan Katırcıoğlu
@@ -194,8 +202,7 @@ import org.springframework.web.reactive.socket.server.upgrade.ReactorNettyReques
 @ConditionalOnProperty(name = "spring.cloud.gateway.enabled", matchIfMissing = true)
 @EnableConfigurationProperties
 @AutoConfigureBefore({ HttpHandlerAutoConfiguration.class, WebFluxAutoConfiguration.class })
-@AutoConfigureAfter({ GatewayReactiveLoadBalancerClientAutoConfiguration.class,
-		GatewayClassPathWarningAutoConfiguration.class })
+@AutoConfigureAfter({ GatewayReactiveLoadBalancerClientAutoConfiguration.class, GatewayClassPathWarningAutoConfiguration.class })
 @ConditionalOnClass(DispatcherHandler.class)
 public class GatewayAutoConfiguration {
 
@@ -229,6 +236,11 @@ public class GatewayAutoConfiguration {
 		return new PropertiesRouteDefinitionLocator(properties);
 	}
 
+	/**
+	 * 如果基于Redis的没有注册，则注册这个
+	 *
+	 * @return
+	 */
 	@Bean
 	@ConditionalOnMissingBean(RouteDefinitionRepository.class)
 	public InMemoryRouteDefinitionRepository inMemoryRouteDefinitionRepository() {
@@ -242,18 +254,13 @@ public class GatewayAutoConfiguration {
 	}
 
 	@Bean
-	public ConfigurationService gatewayConfigurationService(BeanFactory beanFactory,
-			@Qualifier("webFluxConversionService") ObjectProvider<ConversionService> conversionService,
-			ObjectProvider<Validator> validator) {
+	public ConfigurationService gatewayConfigurationService(BeanFactory beanFactory, @Qualifier("webFluxConversionService") ObjectProvider<ConversionService> conversionService, ObjectProvider<Validator> validator) {
 		return new ConfigurationService(beanFactory, conversionService, validator);
 	}
 
 	@Bean
-	public RouteLocator routeDefinitionRouteLocator(GatewayProperties properties,
-			List<GatewayFilterFactory> gatewayFilters, List<RoutePredicateFactory> predicates,
-			RouteDefinitionLocator routeDefinitionLocator, ConfigurationService configurationService) {
-		return new RouteDefinitionRouteLocator(routeDefinitionLocator, predicates, gatewayFilters, properties,
-				configurationService);
+	public RouteLocator routeDefinitionRouteLocator(GatewayProperties properties, List<GatewayFilterFactory> gatewayFilters, List<RoutePredicateFactory> predicates, RouteDefinitionLocator routeDefinitionLocator, ConfigurationService configurationService) {
+		return new RouteDefinitionRouteLocator(routeDefinitionLocator, predicates, gatewayFilters, properties, configurationService);
 	}
 
 	@Bean
@@ -266,8 +273,7 @@ public class GatewayAutoConfiguration {
 
 	@Bean
 	@ConditionalOnClass(name = "org.springframework.cloud.client.discovery.event.HeartbeatMonitor")
-	@ConditionalOnProperty(prefix = GatewayProperties.PREFIX, name = ".route-refresh-listener.enabled",
-			matchIfMissing = true)
+	@ConditionalOnProperty(prefix = GatewayProperties.PREFIX, name = ".route-refresh-listener.enabled", matchIfMissing = true)
 	public RouteRefreshListener routeRefreshListener(ApplicationEventPublisher publisher) {
 		return new RouteRefreshListener(publisher);
 	}

@@ -28,13 +28,15 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.toAsyncPredicate;
 
 /**
+ * 路由条件工厂
+ *
  * @author Spencer Gibb
  */
 @FunctionalInterface
 public interface RoutePredicateFactory<C> extends ShortcutConfigurable, Configurable<C> {
 
 	/**
-	 * Pattern key.
+	 * 模式键名
 	 */
 	String PATTERN_KEY = "pattern";
 

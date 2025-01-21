@@ -37,10 +37,11 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 
 /**
+ * 基于缓存实现的路由定位器
+ *
  * @author Spencer Gibb
  */
-public class CachingRouteLocator
-		implements Ordered, RouteLocator, ApplicationListener<RefreshRoutesEvent>, ApplicationEventPublisherAware {
+public class CachingRouteLocator implements Ordered, RouteLocator, ApplicationListener<RefreshRoutesEvent>, ApplicationEventPublisherAware {
 
 	private static final Log log = LogFactory.getLog(CachingRouteLocator.class);
 
@@ -50,6 +51,9 @@ public class CachingRouteLocator
 
 	private final Flux<Route> routes;
 
+	/**
+	 * 基于Map的缓存
+	 */
 	private final Map<String, List> cache = new ConcurrentHashMap<>();
 
 	private ApplicationEventPublisher applicationEventPublisher;

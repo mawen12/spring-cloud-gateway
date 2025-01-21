@@ -27,29 +27,51 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.springframework.cloud.gateway.support.GatewayToStringStyler.filterToStringCreator;
 
 /**
+ * 增加请求头的网关过滤器工厂
+ *
+ * <p>配置示例：
+ * <pre>
+ *   spring:
+ *     cloud:
+ *       gateway:
+ *         routes:
+ *           - id: add_request_header_route
+ *             uri: https://example.org
+ *             filters:
+ *               - AddRequestHeader=X-Request-red, blue
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class AddRequestHeaderGatewayFilterFactory extends AbstractNameValueGatewayFilterFactory {
 
+	/**
+	 * 创建 {@code AddRequestHeaderGatewayFilter}
+	 *
+	 * @param config
+	 * @return
+	 */
 	@Override
 	public GatewayFilter apply(NameValueConfig config) {
 		return new GatewayFilter() {
 			@Override
 			public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+				// 使用uriTemplateVariables对值进行构造
 				String value = ServerWebExchangeUtils.expand(exchange, config.getValue());
+				// 突变并构造服务http请求
 				ServerHttpRequest request = exchange.getRequest()
 					.mutate()
+						// 添加请求头，类似于上述示例中的X-Request-red, blue
 					.headers(httpHeaders -> httpHeaders.add(config.getName(), value))
 					.build();
 
+				// 突变并构建服务Web交换器，用于执行后续过滤器
 				return chain.filter(exchange.mutate().request(request).build());
 			}
 
 			@Override
 			public String toString() {
-				return filterToStringCreator(AddRequestHeaderGatewayFilterFactory.this)
-					.append(config.getName(), config.getValue())
-					.toString();
+				return filterToStringCreator(AddRequestHeaderGatewayFilterFactory.this).append(config.getName(), config.getValue()).toString();
 			}
 		};
 	}

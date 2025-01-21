@@ -26,6 +26,20 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 代表在指定时间之前的条件
+ *
+ * <p>配置示例:
+ * <pre>
+ * 	spring:
+ * 	  cloud:
+ * 	    gateway:
+ * 	      routes:
+ * 	        -id: before_route
+ * 	        uri: https://example.org
+ * 	        predicates:
+ * 	          - Before=2017-01-20T17:42:47.789-07:00[America/Denver]
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class BeforeRoutePredicateFactory extends AbstractRoutePredicateFactory<BeforeRoutePredicateFactory.Config> {
@@ -50,6 +64,7 @@ public class BeforeRoutePredicateFactory extends AbstractRoutePredicateFactory<B
 			@Override
 			public boolean test(ServerWebExchange serverWebExchange) {
 				final ZonedDateTime now = ZonedDateTime.now();
+				// 对比当前时间是否早于配置的时间
 				return now.isBefore(config.getDatetime());
 			}
 
@@ -65,8 +80,14 @@ public class BeforeRoutePredicateFactory extends AbstractRoutePredicateFactory<B
 		};
 	}
 
+	/**
+	 * 代表Before的配置值
+	 */
 	public static class Config {
 
+		/**
+		 * 类似上述示例中的2017-01-20T17:42:47.789-07:00[America/Denver]
+		 */
 		@NotNull
 		private ZonedDateTime datetime;
 

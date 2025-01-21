@@ -21,6 +21,8 @@ import java.util.Map;
 import reactor.core.publisher.Flux;
 
 /**
+ * 复合的路由定位器
+ *
  * @author Spencer Gibb
  */
 public class CompositeRouteLocator implements RouteLocator {

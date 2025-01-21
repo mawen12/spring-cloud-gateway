@@ -38,7 +38,7 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CLIENT_RESPONSE_CONN_ATTR;
 
 /**
- * 使用Netty回写响应的过滤器
+ * 使用Netty回写响应的过滤器，将之前发起请求的连接保存，并从中解析响应体，写入到响应中
  *
  * @author Spencer Gibb
  * @see NettyRoutingFilter
@@ -73,25 +73,27 @@ public class NettyWriteResponseFilter implements GlobalFilter, Ordered {
 		// @formatter:off
 		return chain.filter(exchange)
 				.then(Mono.defer(() -> {
+					// 读取属性 gatewayClientResponseConnection 获取之前请求的响应连接信息
 					Connection connection = exchange.getAttribute(CLIENT_RESPONSE_CONN_ATTR);
 
+					// 如果响应不存在，则直接返回
 					if (connection == null) {
 						return Mono.empty();
 					}
 					if (log.isTraceEnabled()) {
-						log.trace("NettyWriteResponseFilter start inbound: "
-								+ connection.channel().id().asShortText() + ", outbound: "
-								+ exchange.getLogPrefix());
+						log.trace("NettyWriteResponseFilter start inbound: " + connection.channel().id().asShortText() + ", outbound: " + exchange.getLogPrefix());
 					}
 					ServerHttpResponse response = exchange.getResponse();
 
 					// TODO: needed?
+					// 从连接中获取响应
 					final Flux<DataBuffer> body = connection
 							.inbound()
 							.receive()
 							.retain()
 							.map(byteBuf -> wrap(byteBuf, response));
 
+					// 获取响应头上标识的内容类型
 					MediaType contentType = null;
 					try {
 						contentType = response.getHeaders().getContentType();
@@ -101,10 +103,14 @@ public class NettyWriteResponseFilter implements GlobalFilter, Ordered {
 							log.trace("invalid media type", e);
 						}
 					}
+
+					// 对于支持的媒体类型，执行写并刷新；反之直接写入
 					return (isStreamingMediaType(contentType)
 							? response.writeAndFlushWith(body.map(Flux::just))
 							: response.writeWith(body));
+					// 取消时，清理连接
 				})).doOnCancel(() -> cleanup(exchange))
+				// 保存时清理连接
 				.doOnError(throwable -> cleanup(exchange));
 		// @formatter:on
 	}
@@ -125,6 +131,11 @@ public class NettyWriteResponseFilter implements GlobalFilter, Ordered {
 		throw new IllegalArgumentException("Unkown DataBufferFactory type " + bufferFactory.getClass());
 	}
 
+	/**
+	 * 关闭ServerWebExchange下gatewayClientResponseConnection连接
+	 *
+	 * @param exchange
+	 */
 	private void cleanup(ServerWebExchange exchange) {
 		Connection connection = exchange.getAttribute(CLIENT_RESPONSE_CONN_ATTR);
 		if (connection != null && connection.channel().isActive()) {
@@ -133,6 +144,12 @@ public class NettyWriteResponseFilter implements GlobalFilter, Ordered {
 	}
 
 	// TODO: use framework if possible
+	/**
+	 * 检查该过滤器是否支持的内容类型
+	 *
+	 * @param contentType
+	 * @return
+	 */
 	private boolean isStreamingMediaType(@Nullable MediaType contentType) {
 		if (contentType != null) {
 			for (int i = 0; i < streamingMediaTypes.size(); i++) {

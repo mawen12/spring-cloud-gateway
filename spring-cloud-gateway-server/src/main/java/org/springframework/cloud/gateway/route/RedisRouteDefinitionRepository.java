@@ -28,6 +28,8 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Repository;
 
 /**
+ * 基于Redis的路由定义仓库实现
+ *
  * @author Dennis Menge
  * @author lzhpo
  */
@@ -41,6 +43,9 @@ public class RedisRouteDefinitionRepository implements RouteDefinitionRepository
 	 */
 	private static final String ROUTEDEFINITION_REDIS_KEY_PREFIX_QUERY = "routedefinition_";
 
+	/**
+	 * 用于操作Redis
+	 */
 	private ReactiveRedisTemplate<String, RouteDefinition> reactiveRedisTemplate;
 
 	private ReactiveValueOperations<String, RouteDefinition> routeDefinitionReactiveValueOperations;

@@ -50,6 +50,14 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.i
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.setAlreadyRouted;
 
 /**
+ * 基于Websocket的路由过滤器
+ *
+ * <p>该过滤器可能会修改请求协议
+ * <p>该过滤器可能会发起websocket请求
+ *
+ * @see NettyRoutingFilter
+ * @see WebClientHttpRoutingFilter
+ *
  * @author Spencer Gibb
  * @author Nikita Konev
  */
@@ -62,61 +70,85 @@ public class WebsocketRoutingFilter implements GlobalFilter, Ordered {
 
 	private static final Log log = LogFactory.getLog(WebsocketRoutingFilter.class);
 
+	/**
+	 * 负责发起Websocket请求的客户端
+	 */
 	private final WebSocketClient webSocketClient;
 
+	/**
+	 * 负责处理websocket请求、响应的服务
+	 */
 	private final WebSocketService webSocketService;
 
+	/**
+	 * 提供请求头过滤器的对象
+	 */
 	private final ObjectProvider<List<HttpHeadersFilter>> headersFiltersProvider;
 
 	// do not use this headersFilters directly, use getHeadersFilters() instead.
 	private volatile List<HttpHeadersFilter> headersFilters;
 
-	public WebsocketRoutingFilter(WebSocketClient webSocketClient, WebSocketService webSocketService,
-			ObjectProvider<List<HttpHeadersFilter>> headersFiltersProvider) {
+	public WebsocketRoutingFilter(WebSocketClient webSocketClient, WebSocketService webSocketService, ObjectProvider<List<HttpHeadersFilter>> headersFiltersProvider) {
 		this.webSocketClient = webSocketClient;
 		this.webSocketService = webSocketService;
 		this.headersFiltersProvider = headersFiltersProvider;
 	}
 
 	/* for testing */
+	/**
+	 * 将http协议转换为websocket协议
+	 * <ul>
+	 *     <li>http -> ws</li>
+	 *     <li>https -> wss</li>
+	 * </ul>
+	 *
+	 * @param scheme 请求协议
+	 * @return
+	 */
 	static String convertHttpToWs(String scheme) {
 		scheme = scheme.toLowerCase(Locale.ROOT);
 		return "http".equals(scheme) ? "ws" : "https".equals(scheme) ? "wss" : scheme;
 	}
 
+	/**
+	 * 在{@link NettyRoutingFilter}之前执行
+	 */
 	@Override
 	public int getOrder() {
-		// Before NettyRoutingFilter since this routes certain http requests
 		return Ordered.LOWEST_PRECEDENCE - 1;
 	}
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+		// 检查协议并按需更新协议和请求路径
 		changeSchemeIfIsWebSocketUpgrade(exchange);
-
+		// 获取请求路径
 		URI requestUrl = exchange.getRequiredAttribute(GATEWAY_REQUEST_URL_ATTR);
 		String scheme = requestUrl.getScheme();
-
+		// 如果已经路由过和非websocket协议，不再进行路由
 		if (isAlreadyRouted(exchange) || (!"ws".equals(scheme) && !"wss".equals(scheme))) {
 			return chain.filter(exchange);
 		}
+		// 更新路由状态为已路由
 		setAlreadyRouted(exchange);
-
+		// 获取请求头
 		HttpHeaders headers = exchange.getRequest().getHeaders();
+		// 使用请求头过滤器对请求进行过滤器
 		HttpHeaders filtered = filterRequest(getHeadersFilters(), exchange);
-
+		// 获取协议
 		List<String> protocols = getProtocols(headers);
-
-		return this.webSocketService.handleRequest(exchange,
-				new ProxyWebSocketHandler(requestUrl, this.webSocketClient, filtered, protocols));
+		// 发起websocket请求
+		return this.webSocketService.handleRequest(exchange, new ProxyWebSocketHandler(requestUrl, this.webSocketClient, filtered, protocols));
 	}
 
 	/* for testing */ List<String> getProtocols(HttpHeaders headers) {
+		// 读取协议 Sec-WebSocket-Protocol
 		List<String> protocols = headers.get(SEC_WEBSOCKET_PROTOCOL);
 		if (protocols != null) {
 			ArrayList<String> updatedProtocols = new ArrayList<>();
 			for (int i = 0; i < protocols.size(); i++) {
 				String protocol = protocols.get(i);
+				// 对协议按,分隔
 				updatedProtocols.addAll(Arrays.asList(StringUtils.tokenizeToStringArray(protocol, ",")));
 			}
 			protocols = updatedProtocols;
@@ -156,15 +188,20 @@ public class WebsocketRoutingFilter implements GlobalFilter, Ordered {
 	}
 
 	static void changeSchemeIfIsWebSocketUpgrade(ServerWebExchange exchange) {
-		// Check the Upgrade
+		// 获取请求的URL
 		URI requestUrl = exchange.getRequiredAttribute(GATEWAY_REQUEST_URL_ATTR);
+		// 获取请求协议
 		String scheme = requestUrl.getScheme().toLowerCase(Locale.ROOT);
+		// 获取请求头 Upgrade
 		String upgrade = exchange.getRequest().getHeaders().getUpgrade();
-		// change the scheme if the socket client send a "http" or "https"
+		// 如果原始协议是http或https，则修改为ws或wss
 		if ("WebSocket".equalsIgnoreCase(upgrade) && ("http".equals(scheme) || "https".equals(scheme))) {
+			// 转换为websocket协议
 			String wsScheme = convertHttpToWs(scheme);
 			boolean encoded = containsEncodedParts(requestUrl);
+			// 使用新的协议重新构造请求路径
 			URI wsRequestUrl = UriComponentsBuilder.fromUri(requestUrl).scheme(wsScheme).build(encoded).toUri();
+			// 保存属性到 gatewayRequestUrl
 			exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, wsRequestUrl);
 			if (log.isTraceEnabled()) {
 				log.trace("changeSchemeTo:[" + wsRequestUrl + "]");

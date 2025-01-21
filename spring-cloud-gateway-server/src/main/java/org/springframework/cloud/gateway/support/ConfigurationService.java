@@ -42,27 +42,43 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
 import org.springframework.validation.Validator;
 
+/**
+ * 网关配置服务
+ */
 public class ConfigurationService implements ApplicationEventPublisherAware {
 
+	/**
+	 * Spring本地事件发布器
+	 */
 	private ApplicationEventPublisher publisher;
 
+	/**
+	 * Bean工厂
+	 */
 	private BeanFactory beanFactory;
 
+	/**
+	 * 转换服务
+	 */
 	private Supplier<ConversionService> conversionService;
 
+	/**
+	 * Spel表达式解析器
+	 */
 	private SpelExpressionParser parser = new SpelExpressionParser();
 
+	/**
+	 * 校验器
+	 */
 	private Supplier<Validator> validator;
 
-	public ConfigurationService(BeanFactory beanFactory, ObjectProvider<ConversionService> conversionService,
-			ObjectProvider<Validator> validator) {
+	public ConfigurationService(BeanFactory beanFactory, ObjectProvider<ConversionService> conversionService, ObjectProvider<Validator> validator) {
 		this.beanFactory = beanFactory;
 		this.conversionService = conversionService::getIfAvailable;
 		this.validator = validator::getIfAvailable;
 	}
 
-	public ConfigurationService(BeanFactory beanFactory, Supplier<ConversionService> conversionService,
-			Supplier<Validator> validator) {
+	public ConfigurationService(BeanFactory beanFactory, Supplier<ConversionService> conversionService, Supplier<Validator> validator) {
 		this.beanFactory = beanFactory;
 		this.conversionService = conversionService;
 		this.validator = validator;
@@ -85,7 +101,8 @@ public class ConfigurationService implements ApplicationEventPublisherAware {
 		return new InstanceBuilder<T>(this, instance);
 	}
 
-	/* for testing */ static <T> T bindOrCreate(Bindable<T> bindable, Map<String, Object> properties,
+	/* for testing */
+	static <T> T bindOrCreate(Bindable<T> bindable, Map<String, Object> properties,
 			String configurationPropertyName, Validator validator, ConversionService conversionService) {
 		// see ConfigurationPropertiesBinder from spring boot for this definition.
 		BindHandler handler = new IgnoreTopLevelConverterNotFoundBindHandler();

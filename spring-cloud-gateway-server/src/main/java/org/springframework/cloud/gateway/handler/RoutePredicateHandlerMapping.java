@@ -39,36 +39,63 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
+ * Spring Cloud Gateway Handler Mapping
+ *
+ * <p>检查请求是否匹配路由；如果匹配，则发送到{@link org.springframework.web.server.WebHandler}
+ *
  * @author Spencer Gibb
  */
 public class RoutePredicateHandlerMapping extends AbstractHandlerMapping {
 
+	/**
+	 * 请求过滤器链
+	 */
 	private final FilteringWebHandler webHandler;
 
+	/**
+	 * 提供路由
+	 */
 	private final RouteLocator routeLocator;
 
+	/**
+	 * 管理端口
+	 */
 	private final Integer managementPort;
 
+	/**
+	 * 管理端口类型
+	 */
 	private final ManagementPortType managementPortType;
 
-	public RoutePredicateHandlerMapping(FilteringWebHandler webHandler, RouteLocator routeLocator,
-			GlobalCorsProperties globalCorsProperties, Environment environment) {
+	public RoutePredicateHandlerMapping(FilteringWebHandler webHandler, RouteLocator routeLocator, GlobalCorsProperties globalCorsProperties, Environment environment) {
 		this.webHandler = webHandler;
 		this.routeLocator = routeLocator;
 
+		// 从PROPERTIES(management.server.port)获取管理端口
 		this.managementPort = getPortProperty(environment, "management.server.");
 		this.managementPortType = getManagementPortType(environment);
+		// 从PROPERTIES(spring.cloud.gateway.handler-mapping.order) -> DEFAULT(1)获取该Handler Mapping顺序
 		setOrder(environment.getProperty(GatewayProperties.PREFIX + ".handler-mapping.order", Integer.class, 1));
+		//
 		setCorsConfigurations(globalCorsProperties.getCorsConfigurations());
 	}
 
+	/**
+	 * 对比管理端口与服务端口，返回对应的类型
+	 *
+	 * @param environment
+	 * @return
+	 */
 	private ManagementPortType getManagementPortType(Environment environment) {
+		// 获取PROPERTIES(server.port)获取服务端口
 		Integer serverPort = getPortProperty(environment, "server.");
+		// 管理端口未设置，或小于0，代表未启用
 		if (this.managementPort != null && this.managementPort < 0) {
 			return DISABLED;
 		}
-		return ((this.managementPort == null || (serverPort == null && this.managementPort.equals(8080))
-				|| (this.managementPort != 0 && this.managementPort.equals(serverPort))) ? SAME : DIFFERENT);
+		// 如果未设置则使用8080，或设置了相同值，代表SAME，否则是DIFFERENCT
+		return ((this.managementPort == null || (serverPort == null && this.managementPort.equals(8080)) ||
+				(this.managementPort != 0 && this.managementPort.equals(serverPort))) ? SAME : DIFFERENT);
 	}
 
 	private static Integer getPortProperty(Environment environment, String prefix) {
@@ -175,17 +202,17 @@ public class RoutePredicateHandlerMapping extends AbstractHandlerMapping {
 	public enum ManagementPortType {
 
 		/**
-		 * The management port has been disabled.
+		 * 管理端口被禁用
 		 */
 		DISABLED,
 
 		/**
-		 * The management port is the same as the server port.
+		 * 管理端口与服务端口相同
 		 */
 		SAME,
 
 		/**
-		 * The management port and server port are different.
+		 * 管理端口与服务端口不同
 		 */
 		DIFFERENT;
 

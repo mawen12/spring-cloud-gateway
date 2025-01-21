@@ -39,6 +39,17 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.p
 import static org.springframework.http.server.PathContainer.parsePath;
 
 /**
+ * 代表请求路径匹配的条件
+ *
+ * <p>任意匹配接口
+ *
+ * <p>配置示例:
+ * <pre>
+ *   ...
+ *   predicates:
+ * 	   - Path=/red/{segment}, /blue/{segment}
+ * </pre>
+ *
  * @author Spencer Gibb
  * @author Dhawal Kapil
  */
@@ -56,8 +67,7 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 
 	private static void traceMatch(String prefix, Object desired, Object actual, boolean match) {
 		if (log.isTraceEnabled()) {
-			String message = String.format("%s \"%s\" %s against value \"%s\"", prefix, desired,
-					match ? "matches" : "does not match", actual);
+			String message = String.format("%s \"%s\" %s against value \"%s\"", prefix, desired, match ? "matches" : "does not match", actual);
 			log.trace(message);
 		}
 	}
@@ -89,13 +99,13 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 		return new GatewayPredicate() {
 			@Override
 			public boolean test(ServerWebExchange exchange) {
-				PathContainer path = (PathContainer) exchange.getAttributes()
-					.computeIfAbsent(GATEWAY_PREDICATE_PATH_CONTAINER_ATTR,
-							s -> parsePath(exchange.getRequest().getURI().getRawPath()));
+				// 读取请求路径
+				PathContainer path = (PathContainer) exchange.getAttributes().computeIfAbsent(GATEWAY_PREDICATE_PATH_CONTAINER_ATTR, s -> parsePath(exchange.getRequest().getURI().getRawPath()));
 
 				PathPattern match = null;
 				for (int i = 0; i < pathPatterns.size(); i++) {
 					PathPattern pathPattern = pathPatterns.get(i);
+					// 如果知道目标路径，则返回
 					if (pathPattern.matches(path)) {
 						match = pathPattern;
 						break;
@@ -103,9 +113,11 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 				}
 
 				if (match != null) {
+					// 打印trace日志
 					traceMatch("Pattern", match.getPatternString(), path, true);
 					PathMatchInfo pathMatchInfo = match.matchAndExtract(path);
 					putUriTemplateVariables(exchange, pathMatchInfo.getUriVariables());
+					// 将结果保存到属性 gatewayPredicateMatchedPathAttr 中
 					exchange.getAttributes().put(GATEWAY_PREDICATE_MATCHED_PATH_ATTR, match.getPatternString());
 					String routeId = (String) exchange.getAttributes().get(GATEWAY_PREDICATE_ROUTE_ATTR);
 					if (routeId != null) {
@@ -127,14 +139,19 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 
 			@Override
 			public String toString() {
-				return String.format("Paths: %s, match trailing slash: %b", config.getPatterns(),
-						config.isMatchTrailingSlash());
+				return String.format("Paths: %s, match trailing slash: %b", config.getPatterns(), config.isMatchTrailingSlash());
 			}
 		};
 	}
 
+	/**
+	 * 代表Path的配置值
+	 */
 	public static class Config {
 
+		/**
+		 * 类似上述示例中的/red/{segment}, /blue/{segment}
+		 */
 		private List<String> patterns = new ArrayList<>();
 
 		private boolean matchTrailingSlash = true;
@@ -176,9 +193,7 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 
 		@Override
 		public String toString() {
-			return new ToStringCreator(this).append("patterns", patterns)
-				.append(MATCH_TRAILING_SLASH, matchTrailingSlash)
-				.toString();
+			return new ToStringCreator(this).append("patterns", patterns).append(MATCH_TRAILING_SLASH, matchTrailingSlash).toString();
 		}
 
 	}

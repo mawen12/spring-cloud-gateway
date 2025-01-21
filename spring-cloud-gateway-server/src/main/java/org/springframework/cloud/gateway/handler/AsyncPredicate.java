@@ -29,6 +29,8 @@ import org.springframework.util.Assert;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 异步条件
+ *
  * @author Ben Hale
  */
 public interface AsyncPredicate<T> extends Function<T, Publisher<Boolean>>, HasConfig {

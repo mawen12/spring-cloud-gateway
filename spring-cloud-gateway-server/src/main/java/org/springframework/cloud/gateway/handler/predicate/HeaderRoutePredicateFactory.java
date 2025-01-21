@@ -27,6 +27,15 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 代表请求头等值的条件
+ *
+ * <p>配置示例：
+ * <pre>
+ *   ...
+ *   predicates:
+ * 	   - Header=X-Request-Id, \d+
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class HeaderRoutePredicateFactory extends AbstractRoutePredicateFactory<HeaderRoutePredicateFactory.Config> {
@@ -52,11 +61,13 @@ public class HeaderRoutePredicateFactory extends AbstractRoutePredicateFactory<H
 
 	@Override
 	public Predicate<ServerWebExchange> apply(Config config) {
+		// 对配置值进行编译
 		Pattern pattern = (StringUtils.hasText(config.regexp)) ? Pattern.compile(config.regexp) : null;
 
 		return new GatewayPredicate() {
 			@Override
 			public boolean test(ServerWebExchange exchange) {
+				// 获取当前指定请求头的值
 				List<String> values = exchange.getRequest().getHeaders().getValuesAsList(config.header);
 				if (values.isEmpty()) {
 					return false;
@@ -66,6 +77,7 @@ public class HeaderRoutePredicateFactory extends AbstractRoutePredicateFactory<H
 					// check if a header value matches
 					for (int i = 0; i < values.size(); i++) {
 						String value = values.get(i);
+						// 检查请求头值是否匹配
 						if (pattern.asMatchPredicate().test(value)) {
 							return true;
 						}
@@ -89,11 +101,20 @@ public class HeaderRoutePredicateFactory extends AbstractRoutePredicateFactory<H
 		};
 	}
 
+	/**
+	 * 代表Header的配置值
+	 */
 	public static class Config {
 
+		/**
+		 * 类似上述示例中的X-Request-Id
+		 */
 		@NotEmpty
 		private String header;
 
+		/**
+		 * 类似上述示例中的\d+
+		 */
 		private String regexp;
 
 		public String getHeader() {

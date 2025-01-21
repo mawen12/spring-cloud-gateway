@@ -39,26 +39,43 @@ import org.springframework.web.util.UriComponentsBuilder;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.toAsyncPredicate;
 
 /**
- * 路由
+ * Spring Cloud Gateway 路由，其保存了{@code spring.cloud.gateway.routes}的单个配置
  *
  * @author Spencer Gibb
  */
 public class Route implements Ordered {
 
+	/**
+	 * 路由id，用于区分唯一性，其对应{@code spring.cloud.gateway.routes[x].id}
+	 */
 	private final String id;
 
+	/**
+	 * 统一资源定位符，其对应{@code spring.cloud.gateway.routes[x].uri}
+	 */
 	private final URI uri;
 
+	/**
+	 * 顺序，其对应{@code spring.cloud.gateway.routes[x].order}
+	 */
 	private final int order;
 
+	/**
+	 * 基于{@link ServerWebExchange}的条件检查器，其对应{@code spring.cloud.gateway.routes[x].predicates}
+	 */
 	private final AsyncPredicate<ServerWebExchange> predicate;
 
+	/**
+	 * 该路由下的网关过滤器，其对应{@code spring.cloud.gateway.routes[x].filters}
+	 */
 	private final List<GatewayFilter> gatewayFilters;
 
+	/**
+	 * 该路由的元信息，其对应{@code spring.cloud.gateway.routes[x].metadata}
+	 */
 	private final Map<String, Object> metadata;
 
-	private Route(String id, URI uri, int order, AsyncPredicate<ServerWebExchange> predicate,
-			List<GatewayFilter> gatewayFilters, Map<String, Object> metadata) {
+	private Route(String id, URI uri, int order, AsyncPredicate<ServerWebExchange> predicate, List<GatewayFilter> gatewayFilters, Map<String, Object> metadata) {
 		this.id = id;
 		this.uri = uri;
 		this.order = order;
@@ -181,20 +198,27 @@ public class Route implements Ordered {
 			return getThis();
 		}
 
+		/**
+		 * 从配置中将字符串解析为{@link #uri}
+		 * @param uri
+		 * @return
+		 */
 		public B uri(String uri) {
 			return uri(URI.create(uri));
 		}
 
 		public B uri(URI uri) {
 			this.uri = uri;
+			// scheme 不能为空
 			String scheme = this.uri.getScheme();
 			Assert.hasText(scheme, "The parameter [" + this.uri + "] format is incorrect, scheme can not be empty");
+			// scheme设置错误
 			if (scheme.equalsIgnoreCase("localhost")) {
 				// common error
 				// TODO: find a general way to detect without breaking existing behavior
-				throw new IllegalArgumentException(
-						"The parameter [" + this.uri + "] format is incorrect, scheme can not be localhost");
+				throw new IllegalArgumentException("The parameter [" + this.uri + "] format is incorrect, scheme can not be localhost");
 			}
+			// 未指定端口，则根据协议类型选择端口，http -> 80, https -> 443
 			if (this.uri.getPort() < 0 && scheme.startsWith("http")) {
 				// default known http ports
 				int port = this.uri.getScheme().equals("https") ? 443 : 80;

@@ -36,6 +36,8 @@ import org.springframework.web.server.ServerWebExchange;
  * Predicate that reads the body and applies a user provided predicate to run on the body.
  * The body is cached in memory so that possible subsequent calls to the predicate do not
  * need to deserialize again.
+ * 
+ *
  */
 public class ReadBodyRoutePredicateFactory extends AbstractRoutePredicateFactory<ReadBodyRoutePredicateFactory.Config> {
 

@@ -85,6 +85,7 @@ public final class ServerWebExchangeUtils {
 	/**
 	 * 客户端响应连接属性，在执行到路由过滤器并发起请求后，保存返回客户端响应连接
 	 *
+	 * @see
 	 * @see org.springframework.cloud.gateway.filter.NettyRoutingFilter
 	 * @see org.springframework.cloud.gateway.filter.WebsocketRoutingFilter
 	 * @see org.springframework.cloud.gateway.filter.WebClientHttpRoutingFilter
@@ -94,6 +95,7 @@ public final class ServerWebExchangeUtils {
 	/**
 	 * 客户端响应头名称集合属性，在执行到路由过滤器并发起请求后，保存返回响应头的名称集合
 	 *
+	 * @see java.util.HashSet<String>
 	 * @see org.springframework.cloud.gateway.filter.NettyRoutingFilter
 	 * @see org.springframework.cloud.gateway.filter.WebsocketRoutingFilter
 	 * @see org.springframework.cloud.gateway.filter.WebClientHttpRoutingFilter
@@ -111,7 +113,7 @@ public final class ServerWebExchangeUtils {
 	public static final String GATEWAY_REACTOR_CONTEXT_ATTR = qualify("gatewayReactorContext");
 
 	/**
-	 * Gateway request URL attribute name.
+	 * 网关请求URL属性
 	 */
 	public static final String GATEWAY_REQUEST_URL_ATTR = qualify("gatewayRequestUrl");
 
@@ -181,7 +183,9 @@ public final class ServerWebExchangeUtils {
 	public static final String GATEWAY_ALREADY_ROUTED_ATTR = qualify("gatewayAlreadyRouted");
 
 	/**
-	 * Gateway already prefixed attribute name.
+	 * 网关已经添加前缀的属性
+	 *
+	 * @see org.springframework.cloud.gateway.filter.factory.PrefixPathGatewayFilterFactory
 	 */
 	public static final String GATEWAY_ALREADY_PREFIXED_ATTR = qualify("gatewayAlreadyPrefixed");
 
@@ -263,8 +267,7 @@ public final class ServerWebExchangeUtils {
 	}
 
 	public static boolean containsEncodedParts(URI uri) {
-		boolean encoded = (uri.getRawQuery() != null && uri.getRawQuery().contains("%"))
-				|| (uri.getRawPath() != null && uri.getRawPath().contains("%"));
+		boolean encoded = (uri.getRawQuery() != null && uri.getRawQuery().contains("%")) || (uri.getRawPath() != null && uri.getRawPath().contains("%"));
 
 		// Verify if it is really fully encoded. Treat partial encoded as unencoded.
 		if (encoded) {
@@ -325,8 +328,7 @@ public final class ServerWebExchangeUtils {
 	@SuppressWarnings("unchecked")
 	public static void putUriTemplateVariables(ServerWebExchange exchange, Map<String, String> uriVariables) {
 		if (exchange.getAttributes().containsKey(URI_TEMPLATE_VARIABLES_ATTRIBUTE)) {
-			Map<String, Object> existingVariables = (Map<String, Object>) exchange.getAttributes()
-					.get(URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+			Map<String, Object> existingVariables = (Map<String, Object>) exchange.getAttributes().get(URI_TEMPLATE_VARIABLES_ATTRIBUTE);
 			HashMap<String, Object> newVariables = new HashMap<>();
 			newVariables.putAll(existingVariables);
 			newVariables.putAll(uriVariables);
@@ -370,8 +372,7 @@ public final class ServerWebExchangeUtils {
 	 *
 	 * @return Mono of type T created by the function parameter.
 	 */
-	public static <T> Mono<T> cacheRequestBody(ServerWebExchange exchange,
-											   Function<ServerHttpRequest, Mono<T>> function) {
+	public static <T> Mono<T> cacheRequestBody(ServerWebExchange exchange, Function<ServerHttpRequest, Mono<T>> function) {
 		return cacheRequestBody(exchange, false, function);
 	}
 
@@ -391,19 +392,21 @@ public final class ServerWebExchangeUtils {
 	 *
 	 * @return Mono of type T created by the function parameter.
 	 */
-	private static <T> Mono<T> cacheRequestBody(ServerWebExchange exchange, boolean cacheDecoratedRequest,
-												Function<ServerHttpRequest, Mono<T>> function) {
-		// don't cache if body is already cached
+	private static <T> Mono<T> cacheRequestBody(ServerWebExchange exchange, boolean cacheDecoratedRequest, Function<ServerHttpRequest, Mono<T>> function) {
+		// 获取属性 cachedRequestBody
 		Object cachedDataBuffer = exchange.getAttribute(CACHED_REQUEST_BODY_ATTR);
 		if (cachedDataBuffer instanceof DataBuffer) {
 			if (log.isTraceEnabled()) {
 				log.trace("body already in exchange attribute, short circuiting");
 			}
+			// 对于DataBuffer无需缓存
 			return Mono.just(exchange.getRequest()).flatMap(function);
 		}
+		// 获取响应
 		ServerHttpResponse response = exchange.getResponse();
+		// 构造保存响应体的工厂
 		DataBufferFactory factory = response.bufferFactory();
-		// Join all the DataBuffers so we have a single DataBuffer for the body
+		// 将所有DataBuffer连接起来，这样就有了一个用于主体的DataBuffer
 		return DataBufferUtils.join(exchange.getRequest().getBody())
 				.defaultIfEmpty(factory.wrap(EMPTY_BYTES))
 				.map(dataBuffer -> decorate(exchange, dataBuffer, cacheDecoratedRequest))

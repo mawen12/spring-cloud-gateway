@@ -30,6 +30,22 @@ import org.springframework.util.PathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 代表主机匹配的条件
+ *
+ * <p>
+ *
+ * <p>配置示例:
+ * <pre>
+ * 	spring:
+ * 	  cloud:
+ * 	    gateway:
+ * 	      routes:
+ * 	        -id: host_route
+ * 	        uri: https://example.org
+ * 	        predicates:
+ * 	          - Host=**.somehost.org,**.anotherhost.org
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class HostRoutePredicateFactory extends AbstractRoutePredicateFactory<HostRoutePredicateFactory.Config> {
@@ -71,6 +87,7 @@ public class HostRoutePredicateFactory extends AbstractRoutePredicateFactory<Hos
 			@Override
 			public boolean test(ServerWebExchange exchange) {
 				String host;
+				// 获取请求的主机
 				if (includePort) {
 					host = exchange.getRequest().getHeaders().getFirst("Host");
 				}
@@ -87,6 +104,7 @@ public class HostRoutePredicateFactory extends AbstractRoutePredicateFactory<Hos
 				String match = null;
 				for (int i = 0; i < config.getPatterns().size(); i++) {
 					String pattern = config.getPatterns().get(i);
+					// 检查主机是否匹配配置
 					if (pathMatcher.match(pattern, host)) {
 						match = pattern;
 						break;
@@ -114,8 +132,14 @@ public class HostRoutePredicateFactory extends AbstractRoutePredicateFactory<Hos
 		};
 	}
 
+	/**
+	 * 代表Host的配置值
+	 */
 	public static class Config {
 
+		/**
+		 * 类似于上述示例中的**.somehost.org,**.anotherhost.org
+		 */
 		private List<String> patterns = new ArrayList<>();
 
 		public List<String> getPatterns() {

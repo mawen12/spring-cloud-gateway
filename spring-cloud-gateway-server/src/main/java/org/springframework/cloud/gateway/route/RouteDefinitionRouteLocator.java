@@ -44,7 +44,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * {@link RouteLocator} that loads routes from a {@link RouteDefinitionLocator}.
+ *
+ * 从{@link RouteDefinitionLocator}中加载{@link Route}的实现，提供路由
  *
  * @author Spencer Gibb
  */
@@ -57,22 +58,38 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	/**
+	 * 提供路由
+	 */
 	private final RouteDefinitionLocator routeDefinitionLocator;
 
 	private final ConfigurationService configurationService;
 
+	/**
+	 * 提供路由的匹配条件
+	 */
 	private final Map<String, RoutePredicateFactory> predicates = new LinkedHashMap<>();
 
+	/**
+	 * 提供网关过滤器
+	 */
 	private final Map<String, GatewayFilterFactory> gatewayFilterFactories = new HashMap<>();
 
+	/**
+	 * 网关属性
+	 */
 	private final GatewayProperties gatewayProperties;
 
-	public RouteDefinitionRouteLocator(RouteDefinitionLocator routeDefinitionLocator,
-			List<RoutePredicateFactory> predicates, List<GatewayFilterFactory> gatewayFilterFactories,
-			GatewayProperties gatewayProperties, ConfigurationService configurationService) {
+	public RouteDefinitionRouteLocator(RouteDefinitionLocator routeDefinitionLocator, List<RoutePredicateFactory> predicates, List<GatewayFilterFactory> gatewayFilterFactories, GatewayProperties gatewayProperties, ConfigurationService configurationService) {
 		this.routeDefinitionLocator = routeDefinitionLocator;
 		this.configurationService = configurationService;
+		/**
+		 * 将条件写入到{@link predicates}，对于存在相同名称条件的，后者覆盖前者
+		 */
 		initFactories(predicates);
+		/**
+		 * 将过滤器工厂写入到{@link gatewayFilterFactories}
+		 */
 		gatewayFilterFactories.forEach(factory -> this.gatewayFilterFactories.put(factory.name(), factory));
 		this.gatewayProperties = gatewayProperties;
 	}
@@ -81,8 +98,7 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 		predicates.forEach(factory -> {
 			String key = factory.name();
 			if (this.predicates.containsKey(key)) {
-				this.logger.warn("A RoutePredicateFactory named " + key + " already exists, class: "
-						+ this.predicates.get(key) + ". It will be overwritten.");
+				this.logger.warn("A RoutePredicateFactory named " + key + " already exists, class: " + this.predicates.get(key) + ". It will be overwritten.");
 			}
 			this.predicates.put(key, factory);
 			if (logger.isInfoEnabled()) {
@@ -97,8 +113,7 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 	 */
 	@Override
 	public Flux<Route> getRoutesByMetadata(Map<String, Object> metadata) {
-		return getRoutes(this.routeDefinitionLocator.getRouteDefinitions()
-			.filter(routeDef -> RouteLocator.matchMetadata(routeDef.getMetadata(), metadata)));
+		return getRoutes(this.routeDefinitionLocator.getRouteDefinitions().filter(routeDef -> RouteLocator.matchMetadata(routeDef.getMetadata(), metadata)));
 	}
 
 	@Override

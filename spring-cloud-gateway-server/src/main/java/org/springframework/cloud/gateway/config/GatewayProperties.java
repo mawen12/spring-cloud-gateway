@@ -33,6 +33,8 @@ import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 
 /**
+ * Spring Cloud Gateway 配置属性
+ *
  * @author Spencer Gibb
  */
 @ConfigurationProperties(GatewayProperties.PREFIX)

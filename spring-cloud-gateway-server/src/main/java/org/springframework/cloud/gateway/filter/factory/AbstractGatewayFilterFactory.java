@@ -23,6 +23,7 @@ import org.springframework.context.ApplicationEventPublisherAware;
 /**
  * This class is BETA and may be subject to change in a future release.
  *
+ *
  * @param <C> {@link AbstractConfigurable} subtype
  */
 public abstract class AbstractGatewayFilterFactory<C> extends AbstractConfigurable<C>

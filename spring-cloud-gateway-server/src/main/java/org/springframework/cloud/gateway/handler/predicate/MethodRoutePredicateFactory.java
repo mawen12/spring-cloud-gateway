@@ -26,6 +26,17 @@ import org.springframework.web.server.ServerWebExchange;
 import static java.util.Arrays.stream;
 
 /**
+ * 代表HTTP方法匹配的条件
+ *
+ * <p>任意匹配即可
+ *
+ * <p>配置示例:
+ * <pre>
+ *   ...
+ * 	 predicates:
+ * 	   - Method=GET,POST
+ * </pre>
+ *
  * @author Spencer Gibb
  * @author Dennis Menge
  */
@@ -55,7 +66,9 @@ public class MethodRoutePredicateFactory extends AbstractRoutePredicateFactory<M
 		return new GatewayPredicate() {
 			@Override
 			public boolean test(ServerWebExchange exchange) {
+				// 获取请求方法
 				HttpMethod requestMethod = exchange.getRequest().getMethod();
+				// 任意匹配即可
 				return stream(config.getMethods()).anyMatch(httpMethod -> httpMethod == requestMethod);
 			}
 
@@ -66,8 +79,14 @@ public class MethodRoutePredicateFactory extends AbstractRoutePredicateFactory<M
 		};
 	}
 
+	/**
+	 * 代表HTTP的配置值
+	 */
 	public static class Config {
 
+		/**
+		 * 类似上述示例中的GET,POST
+		 */
 		private HttpMethod[] methods;
 
 		public HttpMethod[] getMethods() {

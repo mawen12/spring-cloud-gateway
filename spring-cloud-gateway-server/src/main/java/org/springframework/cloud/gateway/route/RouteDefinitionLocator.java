@@ -19,6 +19,8 @@ package org.springframework.cloud.gateway.route;
 import reactor.core.publisher.Flux;
 
 /**
+ * 路由定义定位器
+ *
  * @author Spencer Gibb
  */
 public interface RouteDefinitionLocator {

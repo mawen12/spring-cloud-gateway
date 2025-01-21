@@ -27,29 +27,39 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.springframework.cloud.gateway.support.GatewayToStringStyler.filterToStringCreator;
 
 /**
+ * 设置请求头的网关过滤器工厂，该类不同于{@link AddRequestHeaderGatewayFilterFactory}，该类直接设置，相当于覆盖原先相同键的请求头信息
+ *
  * @author Spencer Gibb
  */
 public class SetRequestHeaderGatewayFilterFactory extends AbstractNameValueGatewayFilterFactory {
 
+	/**
+	 * 创建 {@code SetRequestHeaderGatewayFilter}
+	 *
+	 * @param config
+	 * @return
+	 */
 	@Override
 	public GatewayFilter apply(NameValueConfig config) {
 		return new GatewayFilter() {
 			@Override
 			public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+				// 使用uriTemplateVariables对值进行构造
 				String value = ServerWebExchangeUtils.expand(exchange, config.getValue());
+				// 突变并构造新的服务http请求
 				ServerHttpRequest request = exchange.getRequest()
 					.mutate()
+						// 向请求头中写入
 					.headers(httpHeaders -> httpHeaders.set(config.name, value))
 					.build();
 
+				// 突变并构造新的服务Web交换
 				return chain.filter(exchange.mutate().request(request).build());
 			}
 
 			@Override
 			public String toString() {
-				return filterToStringCreator(SetRequestHeaderGatewayFilterFactory.this)
-					.append(config.getName(), config.getValue())
-					.toString();
+				return filterToStringCreator(SetRequestHeaderGatewayFilterFactory.this).append(config.getName(), config.getValue()).toString();
 			}
 		};
 	}

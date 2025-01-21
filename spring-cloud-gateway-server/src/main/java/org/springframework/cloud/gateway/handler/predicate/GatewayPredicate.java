@@ -23,6 +23,9 @@ import org.springframework.cloud.gateway.support.Visitor;
 import org.springframework.util.Assert;
 import org.springframework.web.server.ServerWebExchange;
 
+/**
+ * Java 8 Function Predicate
+ */
 public interface GatewayPredicate extends Predicate<ServerWebExchange>, HasConfig {
 
 	@Override

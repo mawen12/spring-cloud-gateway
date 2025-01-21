@@ -42,6 +42,7 @@ import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.util.StringUtils;
 
 /**
+ * 基于{@link org.springframework.cloud.client.discovery.DiscoveryClient}的路由定义定位器
  * TODO: change to RouteLocator? use java dsl
  *
  * @author Spencer Gibb
@@ -50,16 +51,21 @@ public class DiscoveryClientRouteDefinitionLocator implements RouteDefinitionLoc
 
 	private static final Log log = LogFactory.getLog(DiscoveryClientRouteDefinitionLocator.class);
 
+	/**
+	 * 服务发现定位属性类
+	 */
 	private final DiscoveryLocatorProperties properties;
 
 	private final String routeIdPrefix;
 
 	private final SimpleEvaluationContext evalCtxt;
 
+	/**
+	 * 服务发现客户端返回的服务实例列表
+	 */
 	private Flux<List<ServiceInstance>> serviceInstances;
 
-	public DiscoveryClientRouteDefinitionLocator(ReactiveDiscoveryClient discoveryClient,
-			DiscoveryLocatorProperties properties) {
+	public DiscoveryClientRouteDefinitionLocator(ReactiveDiscoveryClient discoveryClient, DiscoveryLocatorProperties properties) {
 		this(discoveryClient.getClass().getSimpleName(), properties);
 		serviceInstances = discoveryClient.getServices()
 			.flatMap(service -> discoveryClient.getInstances(service).collectList());

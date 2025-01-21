@@ -23,6 +23,8 @@ import reactor.core.publisher.Flux;
 import org.springframework.util.CollectionUtils;
 
 /**
+ * 路由定位器，提供路由信息
+ *
  * @author Spencer Gibb
  */
 // TODO: rename to Routes?
@@ -31,6 +33,8 @@ public interface RouteLocator {
 	Flux<Route> getRoutes();
 
 	/**
+	 * 返回与参数中元信息均匹配的特定{@link Route}集合
+	 *
 	 * Gets routes whose {@link Route#getId()} matches with any of the ids passed by
 	 * parameters. If an ID cannot be found, it will not return a route for that ID.
 	 */

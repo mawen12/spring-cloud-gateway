@@ -38,13 +38,14 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.a
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.getUriTemplateVariables;
 
 /**
+ * 基于前缀路径的网关过滤器工厂
+ *
  * @author Spencer Gibb
  */
-public class PrefixPathGatewayFilterFactory
-		extends AbstractGatewayFilterFactory<PrefixPathGatewayFilterFactory.Config> {
+public class PrefixPathGatewayFilterFactory extends AbstractGatewayFilterFactory<PrefixPathGatewayFilterFactory.Config> {
 
 	/**
-	 * Prefix key.
+	 * 前缀关键词
 	 */
 	public static final String PREFIX_KEY = "prefix";
 
@@ -59,40 +60,57 @@ public class PrefixPathGatewayFilterFactory
 		return Arrays.asList(PREFIX_KEY);
 	}
 
+	/**
+	 * 创建{@code PrefixPathGatewayFilter}
+	 *
+	 * @param config
+	 * @return
+	 */
 	@Override
 	public GatewayFilter apply(Config config) {
 		return new GatewayFilter() {
+			// 构造Uri模版
 			final UriTemplate uriTemplate = new UriTemplate(config.prefix);
 
 			@Override
 			public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+				// 获取属性 org.springframework.cloud.gateway.support.ServerWebExchangeUtils.gatewayAlreadyPrefixed，用于检查是否已经进行过前缀追加的工作
 				boolean alreadyPrefixed = exchange.getAttributeOrDefault(GATEWAY_ALREADY_PREFIXED_ATTR, false);
 				if (alreadyPrefixed) {
+					// 已经执行过，不再重复执行
 					return chain.filter(exchange);
 				}
+				// 更新属性 org.springframework.cloud.gateway.support.ServerWebExchangeUtils.gatewayAlreadyPrefixed 为true
 				exchange.getAttributes().put(GATEWAY_ALREADY_PREFIXED_ATTR, true);
 
+				// 读取请求
 				ServerHttpRequest req = exchange.getRequest();
+				// 保存原始的请求路径到 gatewayOriginalRequestUrl
 				addOriginalRequestUrl(exchange, req.getURI());
 
+				// 读取属性 uriTemplateVariables
 				Map<String, String> uriVariables = getUriTemplateVariables(exchange);
+				// 扩展该属性
 				URI uri = uriTemplate.expand(uriVariables);
 
+				// 重新构造路径，格式为{prefixPath}+{rawPath}
 				String newPath = uri.getRawPath() + req.getURI().getRawPath();
+				// 更新属性 gatewayRequestUrl
 				exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, uri);
+				// 使用该路径构造新的请求
 				ServerHttpRequest request = req.mutate().path(newPath).build();
 
 				if (log.isTraceEnabled()) {
 					log.trace("Prefixed URI with: " + config.prefix + " -> " + request.getURI());
 				}
 
+				// 突变并构建新的ServerWebExchange
 				return chain.filter(exchange.mutate().request(request).build());
 			}
 
 			@Override
 			public String toString() {
-				return filterToStringCreator(PrefixPathGatewayFilterFactory.this).append("prefix", config.getPrefix())
-					.toString();
+				return filterToStringCreator(PrefixPathGatewayFilterFactory.this).append("prefix", config.getPrefix()).toString();
 			}
 		};
 	}

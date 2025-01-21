@@ -28,7 +28,9 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * Used to build a {@link RouteLocator}.
+ * 用于构造{@link RouteLocator}的构造器
+ *
+ * <p>Builder设计模式
  */
 public class RouteLocatorBuilder {
 
@@ -60,8 +62,9 @@ public class RouteLocatorBuilder {
 		}
 
 		/**
-		 * Creates a new {@link Route}.
-		 * @param id the unique id for the route
+		 * 使用id和条件构造一个{@link Route}
+		 *
+		 * @param id 用于路由的唯一Id
 		 * @param fn a function which takes in a {@link PredicateSpec} and returns a
 		 * {@link Route.AsyncBuilder}
 		 * @return a {@link Builder}
@@ -73,7 +76,8 @@ public class RouteLocatorBuilder {
 		}
 
 		/**
-		 * Creates a new {@link Route}.
+		 * 使用条件构造一个{@link Route}，其唯一id使用{@link RouteSpec#randomId()}生成随机值
+		 *
 		 * @param fn a function which takes in a {@link PredicateSpec} and returns a
 		 * {@link Route.AsyncBuilder}
 		 * @return a {@link Builder}
@@ -85,7 +89,8 @@ public class RouteLocatorBuilder {
 		}
 
 		/**
-		 * Builds and returns a {@link RouteLocator}.
+		 * 构造并返回{@link RouteLocator}
+		 *
 		 * @return a {@link RouteLocator}
 		 */
 		public RouteLocator build() {

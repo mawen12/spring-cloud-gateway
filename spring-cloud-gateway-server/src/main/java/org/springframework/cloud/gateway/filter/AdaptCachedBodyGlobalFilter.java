@@ -34,6 +34,9 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.C
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
+/**
+ * 适配缓存体的全局过滤器
+ */
 public class AdaptCachedBodyGlobalFilter implements GlobalFilter, Ordered, ApplicationListener<EnableBodyCachingEvent> {
 
 	private ConcurrentMap<String, Boolean> routesToCache = new ConcurrentHashMap<>();
@@ -45,29 +48,33 @@ public class AdaptCachedBodyGlobalFilter implements GlobalFilter, Ordered, Appli
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-		// the cached ServerHttpRequest is used when the ServerWebExchange can not be
-		// mutated, for example, during a predicate where the body is read, but still
-		// needs to be cached.
-		ServerHttpRequest cachedRequest = exchange.getAttributeOrDefault(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR,
-				null);
+		// 当ServerWebExchange无法变异时，使用缓存的ServerHttpRequest。例如在读取主体的谓词期间，但仍然需要缓存
+		// 获取属性 cachedServerHttpRequestDecorator
+		ServerHttpRequest cachedRequest = exchange.getAttributeOrDefault(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR, null);
 		if (cachedRequest != null) {
+			// 移除属性 cachedServerHttpRequestDecorator
 			exchange.getAttributes().remove(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
+			// 对请求进行变异并构建
 			return chain.filter(exchange.mutate().request(cachedRequest).build());
 		}
 
-		//
+		// 读取属性 cachedRequestBody
 		DataBuffer body = exchange.getAttributeOrDefault(CACHED_REQUEST_BODY_ATTR, null);
+		// 读取属性 gatewayRoute
 		Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
 
 		if (body != null || !this.routesToCache.containsKey(route.getId())) {
+			// 在请求体不为空，或者缓存中不包含该路由的时候，跳过并执行下一个过滤器
 			return chain.filter(exchange);
 		}
 
+		// 缓存请求体
 		return ServerWebExchangeUtils.cacheRequestBody(exchange, (serverHttpRequest) -> {
-			// don't mutate and build if same request object
+			// 如果请求对象相同则不进行变异和构建
 			if (serverHttpRequest == exchange.getRequest()) {
 				return chain.filter(exchange);
 			}
+			// 对请求进行变异并构建
 			return chain.filter(exchange.mutate().request(serverHttpRequest).build());
 		});
 	}

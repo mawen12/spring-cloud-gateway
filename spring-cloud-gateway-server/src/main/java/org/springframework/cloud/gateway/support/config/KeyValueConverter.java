@@ -19,6 +19,10 @@ package org.springframework.cloud.gateway.support.config;
 import org.springframework.core.convert.converter.Converter;
 
 /**
+ * 提供将{@link String}转换为{@link KeyValue}的工具
+ *
+ * <p>进行转换的{@link String}格式为key:value
+ *
  * @author Marta Medio
  */
 public class KeyValueConverter implements Converter<String, KeyValue> {
@@ -28,6 +32,7 @@ public class KeyValueConverter implements Converter<String, KeyValue> {
 	@Override
 	public KeyValue convert(String source) throws IllegalArgumentException {
 		try {
+			// 仅支持以:进行分隔的字符串
 			String[] split = source.split(":");
 			if (split.length == 2) {
 				return new KeyValue(split[0], split.length == 1 ? "" : split[1]);

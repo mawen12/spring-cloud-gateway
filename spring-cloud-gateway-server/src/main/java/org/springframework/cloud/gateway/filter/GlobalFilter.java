@@ -23,7 +23,7 @@ import org.springframework.web.server.ServerWebExchange;
 /**
  * 拦截式、链式处理网关请求的契约，可用于实现跨领域的、与应用程序无关的要求，如：安全性、超时等
  *
- * 仅适用于匹配的网关路由
+ * 仅适用于匹配的网关路由，对每个请求默认应用
  *
  * 复制于{@link org.springframework.web.server.WebFilter}
  *

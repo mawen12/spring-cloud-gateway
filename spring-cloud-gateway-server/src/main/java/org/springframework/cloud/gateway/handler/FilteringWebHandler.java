@@ -44,8 +44,9 @@ import org.springframework.web.server.WebHandler;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
- * WebHandler that delegates to a chain of {@link GlobalFilter} instances and
- * {@link GatewayFilterFactory} instances then to the target {@link WebHandler}.
+ * Spring Cloud Gateway Web Handler
+ *
+ * <p>委托给{@link GlobalFilter}实例链和{@link GatewayFilterFactory}实例，然后委托给目标{@link WebHandler}
  *
  * @author Rossen Stoyanchev
  * @author Spencer Gibb
@@ -56,10 +57,19 @@ public class FilteringWebHandler implements WebHandler, ApplicationListener<Refr
 
 	protected static final Log logger = LogFactory.getLog(FilteringWebHandler.class);
 
+	/**
+	 * 全局过滤器
+	 */
 	private final List<GatewayFilter> globalFilters;
 
+	/**
+	 * 维护了路由和对应的过滤器列表
+	 */
 	private final ConcurrentHashMap<Route, List<GatewayFilter>> routeFilterMap = new ConcurrentHashMap();
 
+	/**
+	 * 路由过滤器缓存的开关，如果{@link #routeFilterCacheEnabled=true}，则使用{@link #routeFilterMap}缓存路由及其过滤器
+	 */
 	private final boolean routeFilterCacheEnabled;
 
 	@Deprecated
@@ -76,14 +86,25 @@ public class FilteringWebHandler implements WebHandler, ApplicationListener<Refr
 		return routeFilterMap;
 	}
 
+	/**
+	 * 将{@link GlobalFilter}转换为{@link GatewayFilter}，使用{@link GatewayFilterAdapter}封装{@link GlobalFilter}，
+	 * 对于支持排序的过滤器，使用{@link OrderedGatewayFilter}封装。
+	 *
+	 * @param filters
+	 * @return
+	 */
 	private static List<GatewayFilter> loadFilters(List<GlobalFilter> filters) {
 		return filters.stream().map(filter -> {
+			// 使用适配器封装
 			GatewayFilterAdapter gatewayFilter = new GatewayFilterAdapter(filter);
+
 			if (filter instanceof Ordered) {
+				// 处理Order接口
 				int order = ((Ordered) filter).getOrder();
 				return new OrderedGatewayFilter(gatewayFilter, order);
 			}
 			else {
+				// 处理Order注解
 				Order order = AnnotationUtils.findAnnotation(filter.getClass(), Order.class);
 				if (order != null) {
 					return new OrderedGatewayFilter(gatewayFilter, order.value());
@@ -100,9 +121,17 @@ public class FilteringWebHandler implements WebHandler, ApplicationListener<Refr
 		}
 	}
 
+	/**
+	 * 处理{@link ServerWebExchange}
+	 *
+	 * @param exchange the current server exchange
+	 * @return
+	 */
 	@Override
 	public Mono<Void> handle(ServerWebExchange exchange) {
+		// 获取 gatewayRoute 路由信息
 		Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
+		//
 		List<GatewayFilter> combined = getCombinedFilters(route);
 
 		if (logger.isDebugEnabled()) {
@@ -114,6 +143,7 @@ public class FilteringWebHandler implements WebHandler, ApplicationListener<Refr
 
 	protected List<GatewayFilter> getCombinedFilters(Route route) {
 		if (this.routeFilterCacheEnabled) {
+			// 启动路由过滤器患处
 			return routeFilterMap.computeIfAbsent(route, this::getAllFilters);
 		}
 		else {

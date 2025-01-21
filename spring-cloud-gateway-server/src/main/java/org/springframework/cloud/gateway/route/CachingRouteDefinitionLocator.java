@@ -28,6 +28,8 @@ import org.springframework.cloud.gateway.event.RefreshRoutesEvent;
 import org.springframework.context.ApplicationListener;
 
 /**
+ * 基于{@link Map}缓存的路由定义定位器
+ *
  * @author Spencer Gibb
  */
 public class CachingRouteDefinitionLocator implements RouteDefinitionLocator, ApplicationListener<RefreshRoutesEvent> {
@@ -38,6 +40,9 @@ public class CachingRouteDefinitionLocator implements RouteDefinitionLocator, Ap
 
 	private final Flux<RouteDefinition> routeDefinitions;
 
+	/**
+	 * 缓存
+	 */
 	private final Map<String, List> cache = new ConcurrentHashMap<>();
 
 	public CachingRouteDefinitionLocator(RouteDefinitionLocator delegate) {

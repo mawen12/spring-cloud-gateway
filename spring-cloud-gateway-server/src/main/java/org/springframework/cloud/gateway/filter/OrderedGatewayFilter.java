@@ -22,7 +22,7 @@ import org.springframework.core.Ordered;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * 已排序网关过滤器
+ * 已排序的网关过滤器
  *
  * @author Spencer Gibb
  */
